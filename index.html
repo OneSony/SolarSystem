@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+  <meta charset="UTF-8">
+  <title>Solar System</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <!-- 引入 Three.js CDN -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script>
+    // 场景、相机、渲染器
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    // 设置背景
+    scene.background = new THREE.Color(0x000011);
+
+    // 创建纹理加载器
+    const textureLoader = new THREE.TextureLoader();
+
+    // 创建太阳
+    const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
+    const sunMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xffaa00,
+      emissive: 0xff4400
+    });
+    const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    scene.add(sun);
+
+    // 太阳光源
+    const sunLight = new THREE.PointLight(0xffffff, 5, 100);
+    sunLight.position.set(0, 0, 0);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    scene.add(sunLight);
+
+    // 环境光
+    const ambientLight = new THREE.AmbientLight(0x101010, 0.1);
+    scene.add(ambientLight);
+
+    // 创建地球
+    const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const earthMaterial = new THREE.MeshPhongMaterial({ 
+      color: 0x4488ff,
+      shininess: 30
+    });
+    
+    // 加载地球纹理
+    textureLoader.load(
+      'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+      function (texture) {
+        earthMaterial.map = texture;
+        earthMaterial.needsUpdate = true;
+      },
+      undefined,
+      function (error) {
+        console.log('地球纹理加载失败，使用默认蓝色');
+      }
+    );
+    
+    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+    earth.castShadow = true;
+    earth.receiveShadow = true;
+
+    // 创建月球
+    const moonGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+    const moonMaterial = new THREE.MeshPhongMaterial({ 
+      color: 0xcccccc,
+      shininess: 10
+    });
+    const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+    moon.castShadow = true;
+    moon.receiveShadow = true;
+
+    // 月球轨道设置
+    const moonOrbit = new THREE.Object3D();
+    moonOrbit.add(moon);
+    moon.position.x = 1.2;
+    earth.add(moonOrbit);
+
+    // 地球轨道设置
+    const earthOrbit = new THREE.Object3D();
+    earthOrbit.add(earth);
+    earth.position.x = 5;
+    scene.add(earthOrbit);
+
+    // 轨道线
+    const earthOrbitGeometry = new THREE.RingGeometry(4.8, 5.2, 64);
+    const earthOrbitMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x444444, 
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.3
+    });
+    const earthOrbitRing = new THREE.Mesh(earthOrbitGeometry, earthOrbitMaterial);
+    earthOrbitRing.rotation.x = -Math.PI / 2;
+    scene.add(earthOrbitRing);
+
+    const moonOrbitGeometry = new THREE.RingGeometry(1.1, 1.3, 32);
+    const moonOrbitMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x888888, 
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.4
+    });
+    const moonOrbitRing = new THREE.Mesh(moonOrbitGeometry, moonOrbitMaterial);
+    moonOrbitRing.rotation.x = -Math.PI / 2;
+    earth.add(moonOrbitRing);
+
+    // 相机位置
+    camera.position.z = 10;
+
+    // 简单的动画参数
+    let time = 0;
+
+    // 鼠标控制
+    let mouseX = 0, mouseY = 0;
+    let targetX = 0, targetY = 0;
+    const windowHalfX = window.innerWidth / 2;
+    const windowHalfY = window.innerHeight / 2;
+
+    document.addEventListener('mousemove', (event) => {
+      mouseX = (event.clientX - windowHalfX) * 0.005;
+      mouseY = (event.clientY - windowHalfY) * 0.005;
+    });
+
+    // 动画循环
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      time += 0.01;
+      
+      // 太阳自转
+      sun.rotation.y += 0.005;
+      
+      // 地球公转
+      earthOrbit.rotation.y = time * 0.5;
+      
+      // 地球自转
+      earth.rotation.y += 0.02;
+      
+      // 月球公转
+      moonOrbit.rotation.y = time * 2;
+      
+      // 月球自转（与公转同步）
+      moon.rotation.y = time * 2;
+      
+      // 相机控制
+      targetX += (mouseX - targetX) * 0.05;
+      targetY += (mouseY - targetY) * 0.05;
+      
+      camera.position.x = Math.sin(targetX) * 10;
+      camera.position.y = targetY * 10;
+      camera.position.z = Math.cos(targetX) * 10;
+      camera.lookAt(scene.position);
+      
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
