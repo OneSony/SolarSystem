@@ -3,12 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <title>Solar System</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
+  <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- 界面ui -->
+  <div id="title">
+    <img src="img/logo.png" alt="Solar System">
+    <h1>Solar System Sim</h1>
+  </div>
+  <!-- 控制面板 -->
+  <button id="controlBtn" aria-label="打开/关闭控制面板">
+    <span>≡</span>
+  </button>
+  <aside id="controlPanel">
+    <nav id="tabs">
+      <button class="tab-btn active" data-tab="tab1">
+        <i class="fa fa-info-circle"></i>
+        <span>信息</span>
+      </button>
+      <button class="tab-btn" data-tab="tab2">
+        <i class="fa fa-eye"></i>
+        <span>视图</span>
+      </button>
+      <button class="tab-btn" data-tab="tab3">
+        <i class="fa fa-cog"></i>
+        <span>参数</span>
+      </button>
+    </nav>
+    <div id="panels">
+      <div class="tab-panel active" id="tab1">
+        <h3>基本信息</h3>
+        <p>TODO: 放置关于天体科普（如天体参数、沙罗周期等）或者网页信息（如网页简介、开发者信息、功能描述等）的内容</p>
+      </div>
+      <div class="tab-panel" id="tab2">
+        <h3>视图控制</h3>
+        <p>TODO: 放置视图相关的控件，可能包括：正/侧/3D视角的切换，日月食画中画的切换，贴图切换等</p>
+      </div>
+      <div class="tab-panel" id="tab3">
+        <h3>参数调整</h3>
+        <p>TODO： 放置参数调整的控件，可能包括：运行速度、回溯、天体比例等</p>
+      </div>
+    </div>
+  </aside>
+
   <!-- 引入 Three.js CDN -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script>
@@ -22,7 +60,7 @@
     document.body.appendChild(renderer.domElement);
 
     // 设置背景
-    scene.background = new THREE.Color(0x000011);
+    scene.background = new THREE.Color(0x0d0f13);
 
     // 创建纹理加载器
     const textureLoader = new THREE.TextureLoader();
@@ -168,6 +206,38 @@
     }
     
     animate();
+
+    /* ui界面和交互 */
+    const controlBtn = document.getElementById('controlBtn');
+    const controlPanel = document.getElementById('controlPanel');
+    const tabs = document.querySelectorAll('#tabs .tab-btn');
+    const panels = document.querySelectorAll('#panels .tab-panel');
+    let isControlPanelOpen = false;
+
+    controlBtn.addEventListener('click', function() {
+      if (isControlPanelOpen) {
+        controlPanel.style.width = '0';
+        controlBtn.style.left = '24px';
+        isControlPanelOpen = false;
+      }
+      else{
+        controlPanel.style.width = '25%';
+        controlBtn.style.left = '26%';
+        isControlPanelOpen = true;
+      }
+    })
+
+   
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(this.dataset.tab).classList.add('active');
+      });
+    });
+
   </script>
 </body>
 </html>
