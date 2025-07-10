@@ -105,7 +105,7 @@ button {
 	z-index: 1;
 }
 
-#controlPanel #tabs .tab-btn {
+#controlPanel #tabs .tab {
 	flex: 1;
 	padding: 14px 0 10px 0;
 	background: none;
@@ -129,7 +129,7 @@ button {
 	-o-transition: color .2s, border-bottom .2s;
 }
 
-#controlPanel #tabs .tab-btn.active{
+#controlPanel #tabs .tab.active{
 	background-color: #181818;
 	color: #a68d60;
 	border-bottom: 3px solid #a68d60;
@@ -139,17 +139,524 @@ button {
 	background-color: #181818;
 	flex: 1;
 	overflow-y: auto;
-	padding: 32px 28px;
+	padding: 0 20px;
 }
 
-#controlPanel #panels .tab-panel {
+#controlPanel #panels .panel {
 	display: none;
 	animation: fadeIn .3s;
 	-webkit-animation: fadeIn .3s;
 }
 
-#controlPanel #panels .tab-panel.active {
+#controlPanel #panels .panel.active {
 	display: block;
+}
+
+#controlPanel #panels .panel h3 {
+	margin: 8px 0;
+    font-family: SimSun, serif;
+	font-size: 1.5rem;
+}
+
+#controlPanel #panels .panel h4 {
+	margin: 10px 0;
+    font-family: NSimSun ,serif;
+	font-size: 1rem;
+}
+
+#controlPanel #panels .panel h5 {
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+	font-weight: 300;
+	margin: 0;
+}
+
+#controlPanel #panels .panel hr {
+	position: relative;
+	left: -20px;
+	width: calc(100% + 40px);
+	border: 0;
+	height: 1px;
+	background: #646464;
+	margin: 16px 0;
+}
+
+#controlPanel #panels .panel #viewSettings ul {
+    display: flex;
+	flex-direction: row;
+}
+
+#controlPanel #panels .panel #viewSettings ul li {
+	display: flex;
+    flex-direction: column;
+}
+
+#controlPanel #panels .panel #viewSettings .view-label {
+	display: flex;
+	flex-direction: column
+}
+
+#controlPanel #panels .panel #viewSettings .view-label i{
+	background-color: #282828;
+	box-sizing: border-box;
+	width: 60px;
+	height: 60px;
+	margin: 0 10px 10px 10px;
+	border-radius: 15%;
+	-webkit-border-radius: 15%;
+	-moz-border-radius: 15%;
+	-ms-border-radius: 15%;
+	-o-border-radius: 15%;
+	font-size: 32px;
+	text-align: center;
+	line-height: 60px;
+	transition: color .2s, border .2s;
+	-webkit-transition: color .2s, border .2s;
+	-moz-transition: color .2s, border .2s;
+	-ms-transition: color .2s, border .2s;
+	-o-transition: color .2s, border .2s;
+}
+
+#controlPanel #panels .panel #viewSettings input[type="radio"]:checked + .view-label i {
+    color: #c9a35c;
+	border: #c9a35c 2px solid;
+}
+
+#controlPanel #panels .panel #viewSettings .view-label span{
+	text-align: center;
+}
+
+#controlPanel #panels .panel #viewSettings input[type="radio"]:checked + .view-label span {
+	color: #c9a35c;
+}
+
+#controlPanel #panels .panel #textureSettings #earthTexture,
+#controlPanel #panels .panel #textureSettings #sunTexture,
+#controlPanel #panels .panel #textureSettings #starland{
+	display: flex;
+    flex-direction: row;
+	margin-top: 16px;
+}
+
+#controlPanel #panels .panel #textureSettings h5 {
+	background-color: #282828;
+	margin: 0;
+	padding: 0 10px;
+	font-family: SimSun, serif;
+	font-size: 0.8rem;
+	border-radius: 15%;
+	-webkit-border-radius: 15%;
+	-moz-border-radius: 15%;
+	-ms-border-radius: 15%;
+	-o-border-radius: 15%;
+}
+
+#controlPanel #panels .panel #textureSettings ul {
+	display: flex;
+	flex-direction: column;
+}
+
+#controlPanel #panels .panel #textureSettings .texture-label {
+    display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+#controlPanel #panels .panel #textureSettings .texture-label i {
+	content: "";
+	box-sizing: border-box;
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin: 4px 10px;
+	background-color: #282828;
+	border: 1px solid #646464;
+	border-radius: 50%;
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	-ms-border-radius: 50%;
+	-o-border-radius: 50%;
+	transition: background-color .2s, border .2s;
+	-webkit-transition: background-color .2s, border .2s;
+	-moz-transition: background-color .2s, border .2s;
+	-ms-transition: background-color .2s, border .2s;
+	-o-transition: background-color .2s, border .2s;
+}
+
+#controlPanel #panels .panel #textureSettings .texture-label:hover i {
+	background-color: #969696;
+}
+
+#controlPanel #panels .panel #textureSettings input[type="radio"]:checked +  .texture-label i {
+    background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #textureSettings #earthTexture h5 {
+	line-height: 72px;
+}
+
+#controlPanel #panels .panel #textureSettings #sunTexture h5 {
+	line-height: 48px;
+}
+
+#controlPanel #panels .panel #textureSettings #starland h5 {
+	line-height: 48px;
+}
+
+#controlPanel #panels .panel #PIPSettings ul {
+    margin: 10px 0;
+}
+
+#controlPanel #panels .panel #PIPSettings ul li {
+	display: flex;
+    flex-direction: column;
+}
+
+#controlPanel #panels .panel #PIPSettings h5{
+	margin: 0;
+	padding: 0;
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+	font-weight: 400;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="PIPSwitch"]{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	width: 130px;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="PIPSwitch"] i{
+	display: inline-block;
+	width: 32px;
+	height: 18px;
+	border-radius: 9px;
+	-webkit-border-radius: 9px;
+	-moz-border-radius: 9px;
+	-ms-border-radius: 9px;
+	-o-border-radius: 9px;
+	background-color: #969696;
+	transition: background-color .2s;
+	-webkit-transition: background-color .2s;
+	-moz-transition: background-color .2s;
+	-ms-transition: background-color .2s;
+	-o-transition: background-color .2s;
+}
+
+#controlPanel #panels .panel #PIPSettings input[type="checkbox"]:checked + label[for="PIPSwitch"] i {
+	background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="PIPSwitch"] i::before{
+	content: "";
+	position: relative;
+	display: inline-block;
+	top: 3px;
+	left: 3px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	-ms-border-radius: 50%;
+	-o-border-radius: 50%;
+	background-color: #ffffff;
+	transition: margin-left .2s;
+	-webkit-transition: margin-left .2s;
+	-moz-transition: margin-left .2s;
+}
+
+#controlPanel #panels .panel #PIPSettings input[type="checkbox"]:checked + label[for="PIPSwitch"] i::before {
+	margin-left: 14px;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="latitudePos"] {
+	margin: 0;
+	padding: 0 0 5px 0;
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos {
+	height: 40px;
+	appearance: none;
+	background-color: #e0e0e0;
+	border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	text-align: center;
+	z-index: 1;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos:hover {
+	box-shadow: #c9a35c 0 0 6px;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos option {
+	font-family: SimSun, serif;
+	font-size: 0.8rem;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos option:hover {
+	background-color: #181818
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos option:checked {
+	background-color: #c9a35c
+}
+
+#controlPanel #panels .panel #speedSettings ul {
+	display: flex;
+	flex-direction: row;
+	width: 270px;
+	justify-content: space-between;
+}
+
+#controlPanel #panels .panel #speedSettings ul li{
+    display: flex;
+	flex-direction: row;
+	align-items: center;
+	margin-top: 10px;
+}
+
+#controlPanel #panels .panel h5 {
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+	font-weight: 300;
+	margin: 0;
+}
+
+#controlPanel #panels .panel #speedSettings #speedInput {
+	width: 160px;
+	margin: 0 15px;
+	appearance: none;
+}
+
+#controlPanel #panels .panel #speedSettings #speedInput::-webkit-slider-runnable-track {
+    background: white;
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    -ms-border-radius: 10px;
+    -o-border-radius: 10px;
+    width: 100%;
+    height: 4px;
+}
+
+#controlPanel #panels .panel #speedSettings #speedInput::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: none;
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+    background: #c9a35c;
+    margin-top: -4px;
+    transition: background-color .2s;
+    -webkit-transition: background-color .2s;
+}
+
+#controlPanel #panels .panel #speedSettings label[for="reserveSwitch"],
+#controlPanel #panels .panel #speedSettings label[for="stopSwitch"]{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	margin-left: 12px;
+}
+
+#controlPanel #panels .panel #speedSettings label[for="reserveSwitch"] i,
+#controlPanel #panels .panel #speedSettings label[for="stopSwitch"] i{
+	position: relative;
+	display: inline-block;
+	width: 32px;
+	height: 18px;
+	border-radius: 9px;
+	-webkit-border-radius: 9px;
+	-moz-border-radius: 9px;
+	-ms-border-radius: 9px;
+	-o-border-radius: 9px;
+	background-color: #969696;
+	transition: background-color .2s;
+	-webkit-transition: background-color .2s;
+	-moz-transition: background-color .2s;
+	-ms-transition: background-color .2s;
+	-o-transition: background-color .2s;
+}
+
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="reserveSwitch"] i,
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="stopSwitch"] i{
+	background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #speedSettings label[for="reserveSwitch"] i::before,
+#controlPanel #panels .panel #speedSettings label[for="stopSwitch"] i::before{
+	content: "";
+	position: relative;
+	display: inline-block;
+	top: 3px;
+	left: 3px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	-ms-border-radius: 50%;
+	-o-border-radius: 50%;
+	background-color: #ffffff;
+	transition: margin-left .2s;
+	-webkit-transition: margin-left .2s;
+	-moz-transition: margin-left .2s;
+}
+
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="reserveSwitch"] i::before,
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="stopSwitch"] i::before{
+	margin-left: 14px;
+}
+
+#controlPanel #panels .panel #timeSettings ul {
+    display: flex;
+	flex-direction: column;
+	margin: 4px 0 0 0;
+}
+
+#controlPanel #panels .panel #timeSettings ul li {
+	display: flex;
+    flex-direction: row;
+	align-items: center;
+	width: 280px;
+	margin-top: 4px;
+}
+
+#controlPanel #panels .panel #timeSettings h5{
+    margin: 2px 0;
+}
+
+#controlPanel #panels .panel #timeSettings input[type="date"] {
+	background-color: #cccccc;
+	color: black;
+	border: #a68d60 solid 1px;
+	border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	margin: 4px 4px;
+	padding: 0 4px;
+	width: 160px;
+	height: 18px;
+    margin-left: 20px;
+}
+
+#controlPanel #panels .panel #timeSettings #dateSubmit {
+	appearance: none;
+	height: 20px;
+	width: 20px;
+	border: #a68d60 solid 1px;
+	background-color: #282828;
+	border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	padding: 0;
+}
+
+
+#controlPanel #panels .panel #timeSettings #dateSubmit:hover {
+	background-color: #9f803c;
+}
+
+#controlPanel #panels .panel #timeSettings #dateSubmit:active {
+	border: #282828 solid 1px;
+	background-color: #c9a35c;
+}
+
+
+
+#controlPanel #panels .panel #timeSettings button {
+	appearance: none;
+	height: 30px;
+	width: 64px;
+	border: #a68d60 solid 1px;
+	background-color: #282828;
+	color: #c0c0c0;
+	border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	margin: 4px 4px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+}
+
+#controlPanel #panels .panel #timeSettings button#nextSolarEclipse,
+#controlPanel #panels .panel #timeSettings button#nextLunarEclipse {
+	width: 132px;
+}
+
+#controlPanel #panels .panel #timeSettings button:hover {
+	background-color: #9f803c;
+}
+
+#controlPanel #panels .panel #timeSettings button:active {
+	border: #282828 solid 1px;
+	background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #sizeSettings ul {
+    display: flex;
+	flex-direction: row;
+}
+
+#controlPanel #panels .panel #sizeSettings ul li {
+	display: flex;
+    flex-direction: column;
+}
+
+#controlPanel #panels .panel #sizeSettings .size-label {
+	display: flex;
+	flex-direction: column
+}
+
+#controlPanel #panels .panel #sizeSettings .size-label i{
+	background-color: #282828;
+	box-sizing: border-box;
+	width: 60px;
+	height: 60px;
+	margin: 0 10px 10px 10px;
+	border-radius: 15%;
+	-webkit-border-radius: 15%;
+	-moz-border-radius: 15%;
+	-ms-border-radius: 15%;
+	-o-border-radius: 15%;
+	font-size: 32px;
+	text-align: center;
+	line-height: 60px;
+	transition: color .2s, border .2s;
+	-webkit-transition: color .2s, border .2s;
+	-moz-transition: color .2s, border .2s;
+	-ms-transition: color .2s, border .2s;
+	-o-transition: color .2s, border .2s;
+}
+
+#controlPanel #panels .panel #sizeSettings input[type="radio"]:checked + .size-label i {
+    color: #c9a35c;
+	border: #c9a35c 2px solid;
+}
+
+#controlPanel #panels .panel #sizeSettings .size-label span{
+	text-align: center;
+}
+
+#controlPanel #panels .panel #sizeSettings input[type="radio"]:checked + .size-label span {
+	color: #c9a35c;
 }
 
 @keyframes fadeIn {
