@@ -181,9 +181,14 @@ button {
 	margin: 16px 0;
 }
 
+ul {
+	padding: 0;
+}
+
 #controlPanel #panels .panel #viewSettings ul {
     display: flex;
 	flex-direction: row;
+	padding: 0;
 }
 
 #controlPanel #panels .panel #viewSettings ul li {
@@ -254,6 +259,12 @@ button {
 #controlPanel #panels .panel #textureSettings ul {
 	display: flex;
 	flex-direction: column;
+	align-items: start;
+	margin: 0;
+}
+
+#controlPanel #panels .panel #textureSettings ul li {
+	display: flex;
 }
 
 #controlPanel #panels .panel #textureSettings .texture-label {
@@ -305,6 +316,7 @@ button {
 
 #controlPanel #panels .panel #PIPSettings ul {
     margin: 10px 0;
+	align-items: start;
 }
 
 #controlPanel #panels .panel #PIPSettings ul li {
@@ -329,7 +341,7 @@ button {
 }
 
 #controlPanel #panels .panel #PIPSettings label[for="PIPSwitch"] i{
-	display: inline-block;
+	display: flex;
 	width: 32px;
 	height: 18px;
 	border-radius: 9px;
@@ -343,6 +355,8 @@ button {
 	-moz-transition: background-color .2s;
 	-ms-transition: background-color .2s;
 	-o-transition: background-color .2s;
+	flex-direction: column;
+	justify-content: center;
 }
 
 #controlPanel #panels .panel #PIPSettings input[type="checkbox"]:checked + label[for="PIPSwitch"] i {
@@ -353,7 +367,6 @@ button {
 	content: "";
 	position: relative;
 	display: inline-block;
-	top: 3px;
 	left: 3px;
 	width: 12px;
 	height: 12px;
@@ -414,6 +427,7 @@ button {
 	flex-direction: row;
 	width: 270px;
 	justify-content: space-between;
+	align-items: start;
 }
 
 #controlPanel #panels .panel #speedSettings ul li{
@@ -431,8 +445,8 @@ button {
 }
 
 #controlPanel #panels .panel #speedSettings #speedInput {
-	width: 160px;
-	margin: 0 15px;
+	width: 136px;
+	margin: 0 14px;
 	appearance: none;
 }
 
@@ -475,7 +489,9 @@ button {
 #controlPanel #panels .panel #speedSettings label[for="reserveSwitch"] i,
 #controlPanel #panels .panel #speedSettings label[for="stopSwitch"] i{
 	position: relative;
-	display: inline-block;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;;
 	width: 32px;
 	height: 18px;
 	border-radius: 9px;
@@ -501,7 +517,6 @@ button {
 	content: "";
 	position: relative;
 	display: inline-block;
-	top: 3px;
 	left: 3px;
 	width: 12px;
 	height: 12px;
@@ -525,6 +540,7 @@ button {
     display: flex;
 	flex-direction: column;
 	margin: 4px 0 0 0;
+	align-items: start;
 }
 
 #controlPanel #panels .panel #timeSettings ul li {
@@ -613,6 +629,7 @@ button {
 #controlPanel #panels .panel #sizeSettings ul {
     display: flex;
 	flex-direction: row;
+	align-items: start;
 }
 
 #controlPanel #panels .panel #sizeSettings ul li {
