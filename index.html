@@ -263,10 +263,10 @@
     </div>
   </aside>
   <nav id="toolBar">
-    <button class="tool-btn" id="toolPause" title="暂停">
+    <button class="tool-btn" id="toolPause" title="暂停" onclick="clickOnToolPause()">
       <i class="fa fa-pause"></i>
     </button>
-    <button class="tool-btn" id="toolSpeed" title="速度">
+    <button class="tool-btn" id="toolSpeed" title="速度" onclick="clickOnToolSpeed()">
       <i>x1</i>
     </button>
     <hr>
@@ -285,16 +285,41 @@
   <!-- 引入 Three.js CDN -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script>
-    // 天体和运动参数
+    // 公共变量：控件
+    const controlBtn = document.getElementById('controlBtn');
+    const controlPanel = document.getElementById('controlPanel');
+    const tabs = document.querySelectorAll('#tabs .tab');
+    const panels = document.querySelectorAll('#panels .panel');
+    const earthTextureRadios = document.querySelectorAll('#earthTexture input');
+    const sunTextureRadios = document.querySelectorAll('#sunTexture input');
+    const starlandRadios = document.querySelectorAll('#starland input');
+    const speedInput = document.getElementById('speedInput');
+    const speedLabel = document.getElementById('speedLabel');
+    const reserveSwitch = document.getElementById('reserveSwitch');
+    const stopSwitch = document.getElementById('stopSwitch');
+    const dashboardDate = document.getElementById('db-date');
+    const dashboardSpeed = document.getElementById('db-speed');
+    const dashboardSaros = document.getElementById('db-saros');
+    const toolPause = document.getElementById('toolPause');
+    const toolSpeed = document.getElementById('toolSpeed');
+    let isControlPanelOpen = false;
+    let mouseDragging = false;
+
+    // 公共变量：天体和运动参数
     const frameRate = 60; //动画帧数
+    const sunRotateAnglePerDay = 0.228729; //太阳每天自转的角度
     const earthRevolveAnglePerDay = 0.017202; //地球每天公转的角度（弧度）
     const earthRotateAnglePerDay = 6.283185; //地球每天自转的角度
     const moonRevolveAnglePerDay = 0.229985; //月球每天公转的角度(恒星坐标系)
     const moonRotateAnglePerDay = 0.229985; //月球每天自转的角度
+    const dateOrigin = new Date(2022, 11, 8); //日期原点（日地月共线，月球黄纬约为0）
+    const sarosCurrent = 6585.32; //沙罗周期：6585.32天
+    let dateCurrent = new Date(dateOrigin); //当前日期
+    let speedFactor = 1;
+    let isPaused = false;     //暂停
+    let isbackwards = false;  //倒退
 
-
-
-    // 场景、相机、渲染器
+    // 公共变量：场景、相机、渲染器、纹理
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer();
@@ -302,18 +327,16 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
-
-    // 设置背景
-    scene.background = new THREE.Color(0x0d0f13);
-
-    // 创建纹理加载器
     const textureLoader = new THREE.TextureLoader();
     const sunTextureTrue = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/sun.jpg');
     const sunTextureOrange = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/orange.jpg');
     const earthTextureSatellite = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/earth-sate.jpg');
     const earthTextureCommon = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/earth-common.png");
     const earthTextureBlue = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/transparent.png");
+    const moonTexture = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/moon.png");
 
+    // 设置背景
+    scene.background = new THREE.Color(0x0d0f13);
 
     // 创建太阳
     const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
@@ -356,6 +379,7 @@
     const moonGeometry = new THREE.SphereGeometry(0.15, 16, 16);
     const moonMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xcccccc,
+      map: moonTexture,
       shininess: 10
     });
     const moon = new THREE.Mesh(moonGeometry, moonMaterial);
@@ -404,15 +428,21 @@
     camera.position.z = 10;
 
     // 简单的动画参数
-    let time = 0;
+    let days = 0;
 
     // 鼠标控制
     let mouseX = 0, mouseY = 0;
     let targetX = 0, targetY = 0;
     const windowHalfX = window.innerWidth / 2;
     const windowHalfY = window.innerHeight / 2;
-
+    document.addEventListener('mousedown', (event) => {
+      mouseDragging = true;
+    })
+    document.addEventListener('mouseup', (event) => {
+      mouseDragging = false;
+    })
     document.addEventListener('mousemove', (event) => {
+      if(!mouseDragging) return;
       mouseX = (event.clientX - windowHalfX) * 0.005;
       mouseY = (event.clientY - windowHalfY) * 0.005;
     });
@@ -421,23 +451,25 @@
     function animate() {
       requestAnimationFrame(animate);
       
-      time += 0.01;
-      
-      // 太阳自转
-      sun.rotation.y += 0.005;
-      
-      // 地球公转
-      earthOrbit.rotation.y = time * 0.5;
-      
-      // 地球自转
-      earth.rotation.y += 0.02;
-      
-      // 月球公转
-      moonOrbit.rotation.y = time * 2;
-      
-      // 月球自转（与公转同步）
-      moon.rotation.y = time * 2;
-      
+      if(!isPaused){     
+        var dayDelta = 1 / 60 * speedFactor;
+        if(isbackwards) dayDelta = -dayDelta;
+        days += dayDelta;
+        dateCurrent = new Date(dateOrigin.getTime() + days * 24 * 60 * 60 * 1000);
+        updateDate();
+        
+        // 太阳自转
+        sun.rotation.y += dayDelta * sunRotateAnglePerDay;
+        // 地球公转
+        earthOrbit.rotation.y += dayDelta * earthRevolveAnglePerDay;
+        // 地球自转
+        earth.rotation.y += dayDelta * (-earthRevolveAnglePerDay+earthRotateAnglePerDay);
+        //月球公转
+        moonOrbit.rotation.y += dayDelta * (-earthRotateAnglePerDay+moonRevolveAnglePerDay);
+        // 月球自转（与公转同步）
+        moon.rotation.y += 0;
+      }
+  
       // 相机控制
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;
@@ -488,39 +520,26 @@
     }
 
     /* ui界面和交互 */
-    const controlBtn = document.getElementById('controlBtn');
-    const controlPanel = document.getElementById('controlPanel');
-    const tabs = document.querySelectorAll('#tabs .tab');
-    const panels = document.querySelectorAll('#panels .panel');
-    const earthTextureRadios = document.querySelectorAll('#earthTexture input');
-    const sunTextureRadios = document.querySelectorAll('#sunTexture input');
-    const starlandRadios = document.querySelectorAll('#starland input');
-    const speedInput = document.getElementById('speedInput');
-    const speedLabel = document.getElementById('speedLabel');
-    let isControlPanelOpen = false;
-    let speedFactor = 1;
-
     controlBtn.addEventListener('click', switchControlPanel);
     tabs.forEach(tab => { tab.addEventListener('click', switchTab); });
     earthTextureRadios.forEach(radio => { 
       radio.addEventListener('change', () => {
-        if (radio.checked) 
-          changeEarthTexture(radio.value);
+        if (radio.checked) changeEarthTexture(radio.value);
       }); 
     });
     sunTextureRadios.forEach(radio => { 
       radio.addEventListener('change', () => {
-        if (radio.checked) 
-          changeSunTexture(radio.value);
+        if (radio.checked) changeSunTexture(radio.value);
       }); 
     });
     starlandRadios.forEach(radio => { 
       radio.addEventListener('change', () => {
-        if (radio.checked) 
-          changeStarland(radio.value);
+        if (radio.checked) changeStarland(radio.value);
       }); 
     });
-    speedInput.addEventListener('input', updateSpeedFactor);
+    speedInput.addEventListener('input', changeSpeedFactor);
+    stopSwitch.addEventListener('change', changeStopSwitch);
+    reserveSwitch.addEventListener('change', changeReserveSwitch);
 
     function switchControlPanel(){
       if (isControlPanelOpen) {
@@ -542,10 +561,33 @@
       document.getElementById(this.dataset.tab).classList.add('active');
     }
 
-    function updateSpeedFactor() {
+    function changeSpeedFactor() {
       speedFactor = 2 ** speedInput.value;
-      speedFactor = speedFactor.toFixed(2);
+      if (speedFactor < 1)
+        speedFactor = speedFactor.toFixed(2);
+      else
+        speedFactor = speedFactor.toFixed(0);
       speedLabel.innerHTML = 'x' + speedFactor;
+      toolSpeed.innerHTML = "<i>x" + speedFactor + "</i>";
+      dashboardSpeed.innerHTML = speedFactor + 'day/s';
+    }
+
+    function changeStopSwitch() {
+      if (stopSwitch.checked){
+        isPaused = true;
+        toolPause.innerHTML = '<i class="fa fa-play"></i>';
+      }
+      else{
+        isPaused = false;
+        toolPause.innerHTML = '<i class="fa fa-pause"></i>';
+      }
+    }
+
+    function changeReserveSwitch() {
+      if (reserveSwitch.checked)
+        isbackwards = true;
+      else
+        isbackwards = false;
     }
 
     function changeEarthTexture(value) {
@@ -582,6 +624,33 @@
         starfield.visible = false;
       }
     }
+
+    function clickOnToolPause() {
+      stopSwitch.checked = !stopSwitch.checked;
+      changeStopSwitch();
+    }
+
+    function clickOnToolSpeed(value) {
+      if(speedFactor >= 1 && speedFactor < 4) 
+        speedInput.value = 2;
+      else if(speedFactor >= 4 && speedFactor < 16) 
+        speedInput.value = 4;
+      else if(speedFactor >= 16 && speedFactor < 64) 
+        speedInput.value = 6;
+      else
+        speedInput.value = 0;
+      changeSpeedFactor();
+    }
+
+    function updateDate() {
+      dashboardDate.innerHTML = dateCurrent.toLocaleString().split(' ')[0];
+      var sarosProgress = ((days % sarosCurrent) / sarosCurrent * 100);
+      if(sarosProgress < 0) sarosProgress = 100 + sarosProgress;
+      dashboardSaros.innerHTML = sarosProgress.toFixed(2) + '%';
+    }
+
+
+    // 一些工具函数
   </script>
 </body>
 </html>
