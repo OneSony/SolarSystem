@@ -3,12 +3,285 @@
 <head>
   <meta charset="UTF-8">
   <title>Solar System</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
+  <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- 界面ui -->
+  <div id="title">
+    <img src="img/logo.png" alt="Solar System">
+    <h1>Solar System Sim</h1>
+  </div>
+  <!-- 仪表盘区域 -->
+  <div id="dashboard">
+    <div class="dashboard-item">
+      <span class="db-label">当前日期</span>
+      <span class="db-value" id="db-date">2000-1-1</span>
+    </div>
+    <div class="dashboard-divider"></div>
+    <div class="dashboard-item">
+      <span class="db-label">速度比例</span>
+      <span class="db-value" id="db-speed">1d/s</span>
+    </div>
+    <div class="dashboard-divider"></div>
+    <div class="dashboard-item">
+      <span class="db-label">沙罗周期进度</span>
+      <span class="db-value" id="db-saros">0%</span>
+    </div>
+  </div>
+  <!-- 控制面板 -->
+  <button id="controlBtn" aria-label="打开/关闭控制面板">
+    <span>≡</span>
+  </button>
+  <aside id="controlPanel">
+    <nav id="tabs">
+      <button class="tab active" data-tab="page1">
+        <i class="fa fa-info-circle"></i>
+        <span>信息</span>
+      </button>
+      <button class="tab" data-tab="page2">
+        <i class="fa fa-eye"></i>
+        <span>视图</span>
+      </button>
+      <button class="tab" data-tab="page3">
+        <i class="fa fa-cog"></i>
+        <span>参数</span>
+      </button>
+    </nav>
+    <div id="panels">
+      <div class="panel active" id="page1">
+        <h3>基本信息</h3>
+        <p>TODO: 放置关于天体科普（如天体参数、沙罗周期等）或者网页信息（如网页简介、开发者信息、功能描述等）的内容</p>
+      </div>
+      <div class="panel" id="page2">
+        <div class="contorl-block" id="viewSettings">
+          <h4>
+            <span class="zh">相机视角</span>
+            <span class="en">Camera View</span>
+          </h4>
+          <ul>
+            <li>
+              <input type="radio" name="view" id="top-view" value="top-view" checked hidden>
+              <label for="top-view" class="view-label">
+                <i class="fa fa-toggle-down"></i>
+                <span>俯视图</span>
+              </label>
+            </li>
+            <li>
+              <input type="radio" name="view" id="side-view" value="side-view" hidden>
+              <label for="side-view" class="view-label">
+                <i class="fa fa-toggle-right"></i>
+                <span>侧视图</span>
+              </label>
+            </li>
+            <li>
+              <input type="radio" name="view" id="3D-view" value="3D-view" hidden>
+              <label for="3D-view" class="view-label">
+                <i class="fa fa-cube"></i>
+                <span>3D视图</span>
+              </label>
+            </li>
+          </ul>
+        </div>
+        <hr>
+        <div class="contorl-block" id="textureSettings">
+          <h4>
+            <span class="zh">贴图纹理</span>
+            <span class="en">Surface Texture</span>
+          </h4>
+          <div id="earthTexture">
+            <h5>地球贴图</h5>
+            <ul>
+              <li>
+                <input type="radio" name="earth-texture" id="solid-blue" value="solid-blue" checked hidden>
+                <label for="solid-blue" class="texture-label">
+                  <i></i>
+                  <span>纯蓝色</span>
+                </label>
+              </li>
+              <li>
+                <input type="radio" name="earth-texture" id="common-map" value="common-map" hidden>
+                <label for="common-map" class="texture-label">
+                  <i></i>
+                  <span>世界区划地图</span>
+                </label>
+              </li>
+              <li>
+                <input type="radio" name="earth-texture" id="satellite-map" value="satellite-map" hidden>
+                <label for="satellite-map" class="texture-label">
+                  <i></i>
+                  <span>卫星地图</span>
+                </label>
+              </li>
+            </ul>
+          </div>
+          <div id="sunTexture">
+            <h5>太阳贴图</h5>
+            <ul>
+              <li>
+                <input type="radio" name="sun-texture" id="solid-orange" value="solid-orange" checked hidden>
+                <label for="solid-orange" class="texture-label">
+                  <i></i>
+                  <span>纯橙色</span>
+                </label>
+              </li>
+              <li>
+                <input type="radio" name="sun-texture" id="true-surface" value="true-surface" hidden>
+                <label for="true-surface" class="texture-label">
+                  <i></i>
+                  <span>真实表面</span>
+                </label>
+              </li>
+            </ul>
+          </div>
+          <div id="starland">
+            <h5>星空背景</h5>
+            <ul>
+              <li>
+                <input type="radio" name="starland" id="sl-opt1" value="sl-opt1" checked hidden>
+                <label for="sl-opt1" class="texture-label">
+                  <i></i>
+                  <span>TODO1</span>
+                </label>
+              </li>
+              <li>
+                <input type="radio" name="starland" id="sl-opt2" value="sl-opt2" hidden>
+                <label for="sl-opt2" class="texture-label">
+                  <i></i>
+                  <span>TODO2</span>
+                </label>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <hr>
+        <div class="contorl-block" id="PIPSettings">
+          <h4>
+            <span class="zh">日月食画中画</span>
+            <span class="en">Solar/Moon Eclipse PIP</span>
+          </h4>
+          <ul><li>
+            <input type="checkbox" id="PIPSwitch" hidden>
+            <label for="PIPSwitch" class="PIP-label">
+              <h5>画中画开关</h5>
+              <i></i>
+            </label>
+          </li></ul>
+          <ul><li>
+            <label for="latitudePos">在地球上观测的地点</label>
+            <select id="latitudePos" name="latitudePos">
+              <option value="90">北极附近</option>
+              <option value="45">北半球</option>
+              <option value="0" selected>赤道</option>
+              <option value="-45">南半球</option>
+              <option value="-90">南极附近</option>
+            </select>
+          </li></ul>
+        </div>
+      <p>TODO: 或许有一些其他需要的配置</p>
+      </div>
+      <div class="panel" id="page3">
+        <div class="contorl-block" id="speedSettings">
+          <h4>
+            <span class="zh">速度控制</span>
+            <span class="en">Speed Control</span>
+          </h4>
+          <ul><li>
+            <h5>速度调节</h5>
+            <input type="range" id="speedInput" min="-7" max="7" step="1" value="1">
+            <label for="speedInput" class="speed-label" id="speedLabel">x1</label>
+          </li></ul>
+          <ul>
+            <li>
+              <h5>运动反向</h5>
+              <input type="checkbox" id="reserveSwitch" hidden>
+              <label for="reserveSwitch">
+                <i></i>
+              </label>
+            </li>
+            <li>
+              <h5>运动暂停</h5>
+              <input type="checkbox" id="stopSwitch" hidden>
+              <label for="stopSwitch">
+                <i></i>
+              </label>
+            </li>
+          </ul>
+        </div>
+        <hr>
+        <div class="contorl-block" id="timeSettings">
+          <h4>
+            <span class="zh">时间控制</span>
+            <span class="en">Time Control</span>
+          </h4>
+          <ul><li>
+            <h5>日期跳转</h5>
+            <input type="date">
+            <button id="dateSubmit"><i class="fa fa-check"></i></button>
+          </li></ul>
+          <ul>
+            <h5>快捷选择</h5>
+            <li>
+              <button id="oneYearAgo">-1年</button>
+              <button id="oneMonthAgo">-1月</button>
+              <button id="oneMonthForward">+1月</button>
+              <button id="oneYearForward">+1年</button>
+            </li>
+            <li>
+              <button id="nextSolarEclipse">下一次日食</button>
+              <button id="nextLunarEclipse">下一次月食</button>
+            </li>
+          </ul>
+        </div>
+        <hr>
+        <div class="contorl-block" id="sizeSettings">
+          <h4>
+            <span class="zh">天体尺寸</span>
+            <span class="en">Celestial size</span>
+          </h4>
+          <ul>
+            <li>
+              <input type="radio" name="size" id="suitable-size" value="suitable-size" checked hidden>
+              
+              <label for="suitable-size" class="size-label">
+                <i class="fa fa-eye"></i>
+                <span>适宜观察</span>
+              </label>
+            </li>
+            <li>
+              <input type="radio" name="size" id="true-size" value="true-size" hidden>
+              <label for="true-size" class="size-label">
+                <i class="fa fa-bullseye"></i>
+                <span>真实大小</span>
+              </label>
+            </li>
+          </ul>
+        </div>
+        <hr>
+        <p>TODO: 或许有一些其他需要的配置</p>
+      </div>
+    </div>
+  </aside>
+  <nav id="toolBar">
+    <button class="tool-btn" id="toolPause" title="暂停">
+      <i class="fa fa-pause"></i>
+    </button>
+    <button class="tool-btn" id="toolSpeed" title="速度">
+      <i>x1</i>
+    </button>
+    <hr>
+    <button class="tool-btn" id="toolView" title="切换视角">
+      <i class="fa fa-eye"></i>
+    </button>
+    <button class="tool-btn" id="toolScreenshot" title="截图">
+      <i class="fa fa-camera"></i>
+    </button>
+    <hr>
+    <button class="tool-btn" id="toolHelp" title="帮助">
+      <i class="fa fa-question"></i>
+    </button>
+  </nav>
+
   <!-- 引入 Three.js CDN -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script>
@@ -22,7 +295,7 @@
     document.body.appendChild(renderer.domElement);
 
     // 设置背景
-    scene.background = new THREE.Color(0x000011);
+    scene.background = new THREE.Color(0x0d0f13);
 
     // 创建纹理加载器
     const textureLoader = new THREE.TextureLoader();
@@ -168,6 +441,49 @@
     }
     
     animate();
+
+    /* ui界面和交互 */
+    const controlBtn = document.getElementById('controlBtn');
+    const controlPanel = document.getElementById('controlPanel');
+    const tabs = document.querySelectorAll('#tabs .tab');
+    const panels = document.querySelectorAll('#panels .panel');
+    const speedInput = document.getElementById('speedInput');
+    const speedLabel = document.getElementById('speedLabel');
+    let isControlPanelOpen = false;
+    let speedFactor = 1;
+
+    controlBtn.addEventListener('click', switchControlPanel);
+    tabs.forEach(tab => { tab.addEventListener('click', switchTab); });
+    speedInput.addEventListener('input', updateSpeedFactor);
+
+    function switchControlPanel(){
+      if (isControlPanelOpen) {
+        controlPanel.style.width = '0';
+        controlBtn.style.left = '24px';
+        isControlPanelOpen = false;
+      }
+      else{
+        controlPanel.style.width = '360px';
+        controlBtn.style.left = '400px';
+        isControlPanelOpen = true;
+      }
+    }
+
+    function switchTab() {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.tab).classList.add('active');
+    }
+
+    function updateSpeedFactor() {
+      speedFactor = 2 ** speedInput.value;
+      speedFactor = speedFactor.toFixed(2);
+      speedLabel.innerHTML = 'x' + speedFactor;
+    }
+
+    
+
   </script>
 </body>
 </html>

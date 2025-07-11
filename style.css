@@ -1,0 +1,786 @@
+body {
+	margin: 0;
+	overflow: hidden;
+	font-size: 12px;
+	color: #e6ebf5;
+}
+
+canvas {
+	display: block;
+}
+
+button {
+	background-color: transparent;
+}
+
+#title {
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	display: flex;
+	align-items: center;
+}
+
+#title img {
+	width: 64px;
+	height: 64px;
+
+}
+
+#title h1 {
+	margin-left: 10px;
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 2rem;
+	font-weight: 300;
+	color: #FFFFFF;
+}
+
+/* 仪表盘 */
+#dashboard {
+  position: fixed;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1010;
+  display: flex;
+  align-items: center;
+  background: rgba(32,28,22,0.93);
+  border: 1.5px solid #9b7c3e;
+  border-radius: 15px;
+  box-shadow: 0 2px 16px 0 rgba(50,40,20,.18);
+  padding: 13px 32px;
+  min-width: 280px;
+  max-width: 96vw;
+  gap: 0;
+  opacity: 0.97;
+}
+.dashboard-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 13px;
+  min-width: 90px;
+}
+.db-label {
+  color: #c9a35c;;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  margin-bottom: 3px;
+}
+.db-value {
+  color: #fcfcfc;
+  font-size: 18px;
+  font-family: 'Roboto Mono', 'Consolas', monospace;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.dashboard-divider {
+  width: 1.5px;
+  height: 38px;
+  background: #a68d60;
+  border-radius: 2px;
+  margin: 0 7px;
+  opacity: 0.7;
+}
+
+#controlBtn {
+	position: fixed;
+	top: 86px;
+	left: 24px;
+	z-index: 1002;
+	width: 40px;
+	height: 40px;
+	border: none;
+	background: #9f803c;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 2px 8px 0 rgba(0,0,0,.14);
+	transition: background 0.2s, left 0.35s;
+	-webkit-transition: background 0.2s, left 0.35s;
+	-moz-transition: background 0.2s, left 0.35s;
+	-ms-transition: background 0.2s, left 0.35s;
+	-o-transition: background 0.2s, left 0.35s;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	-ms-border-radius: 12px;
+	-o-border-radius: 12px;
+}
+
+#controlBtn span{
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 2.5rem;
+	font-weight: 300;
+	color: #cccccc;
+}
+
+#controlBtn:hover {
+  	background:  #c9a35c;
+}
+
+#controlPanel {
+  position: fixed;
+  top: 10%;
+  left: 0;
+  width: 0;
+  height: 90%;
+  background: rgba(24,24,24,.50);
+  backdrop-filter: blur(10px);
+  border-radius: 0 16px 16px 0;
+  box-shadow: 2px 0 24px 0 rgba(0,0,0,.18);
+  z-index: 10;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: width .35s cubic-bezier(.7,0,.22,1);
+  -webkit-transition: width .35s cubic-bezier(.7,0,.22,1);
+  -moz-transition: width .35s cubic-bezier(.7,0,.22,1);
+  -ms-transition: width .35s cubic-bezier(.7,0,.22,1);
+  -o-transition: width .35s cubic-bezier(.7,0,.22,1);
+  -webkit-border-radius: 0 16px 16px 0;
+  -moz-border-radius: 0 16px 16px 0;
+  -ms-border-radius: 0 16px 16px 0;
+  -o-border-radius: 0 16px 16px 0;
+}
+
+#controlPanel #tabs {
+	display: flex;
+	justify-content: center;
+	margin-top: 8px;
+	border-bottom: 1px solid #a68d60c2;
+	z-index: 1;
+}
+
+#controlPanel #tabs .tab {
+	flex: 1;
+	padding: 14px 0 10px 0;
+	background: none;
+	border: none;
+	border-bottom: 3px solid transparent;
+	color: #dddddd;
+	font-family: SimSun, STXiHei, sans-serif;
+	font-size: 16px;
+	font-weight: 500;
+	cursor: pointer;
+	border-radius: 10% 10% 0 0;
+	-webkit-border-radius: 10% 10% 0 0;
+	-moz-border-radius: 10% 10% 0 0;
+	-ms-border-radius: 10% 10% 0 0;
+	-o-border-radius: 10% 10% 0 0;
+	outline: none;
+	transition: color .2s, border-bottom .2s;
+	-webkit-transition: color .2s, border-bottom .2s;
+	-moz-transition: color .2s, border-bottom .2s;
+	-ms-transition: color .2s, border-bottom .2s;
+	-o-transition: color .2s, border-bottom .2s;
+}
+
+#controlPanel #tabs .tab.active{
+	background-color: #181818;
+	color: #a68d60;
+	border-bottom: 3px solid #a68d60;
+}
+
+#controlPanel #panels {
+	background-color: #181818;
+	flex: 1;
+	overflow-y: auto;
+	padding: 0 20px;
+}
+
+#controlPanel #panels .panel {
+	display: none;
+	animation: fadeIn .3s;
+	-webkit-animation: fadeIn .3s;
+}
+
+#controlPanel #panels .panel.active {
+	display: block;
+}
+
+#controlPanel #panels .panel h3 {
+	margin: 8px 0;
+    font-family: SimSun, serif;
+	font-size: 1.5rem;
+}
+
+#controlPanel #panels .panel h4 {
+	margin: 10px 0;
+    font-family: NSimSun ,serif;
+	font-size: 1rem;
+}
+
+#controlPanel #panels .panel h5 {
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+	font-weight: 300;
+	margin: 0;
+}
+
+#controlPanel #panels .panel hr {
+	position: relative;
+	left: -20px;
+	width: calc(100% + 40px);
+	border: 0;
+	height: 1px;
+	background: #646464;
+	margin: 16px 0;
+}
+
+ul {
+	padding: 0;
+}
+
+#controlPanel #panels .panel #viewSettings ul {
+    display: flex;
+	flex-direction: row;
+	padding: 0;
+}
+
+#controlPanel #panels .panel #viewSettings ul li {
+	display: flex;
+    flex-direction: column;
+}
+
+#controlPanel #panels .panel #viewSettings .view-label {
+	display: flex;
+	flex-direction: column
+}
+
+#controlPanel #panels .panel #viewSettings .view-label i{
+	background-color: #282828;
+	box-sizing: border-box;
+	width: 60px;
+	height: 60px;
+	margin: 0 10px 10px 10px;
+	border-radius: 15%;
+	-webkit-border-radius: 15%;
+	-moz-border-radius: 15%;
+	-ms-border-radius: 15%;
+	-o-border-radius: 15%;
+	font-size: 32px;
+	text-align: center;
+	line-height: 60px;
+	transition: color .2s, border .2s;
+	-webkit-transition: color .2s, border .2s;
+	-moz-transition: color .2s, border .2s;
+	-ms-transition: color .2s, border .2s;
+	-o-transition: color .2s, border .2s;
+}
+
+#controlPanel #panels .panel #viewSettings input[type="radio"]:checked + .view-label i {
+    color: #c9a35c;
+	border: #c9a35c 2px solid;
+}
+
+#controlPanel #panels .panel #viewSettings .view-label span{
+	text-align: center;
+}
+
+#controlPanel #panels .panel #viewSettings input[type="radio"]:checked + .view-label span {
+	color: #c9a35c;
+}
+
+#controlPanel #panels .panel #textureSettings #earthTexture,
+#controlPanel #panels .panel #textureSettings #sunTexture,
+#controlPanel #panels .panel #textureSettings #starland{
+	display: flex;
+    flex-direction: row;
+	margin-top: 16px;
+}
+
+#controlPanel #panels .panel #textureSettings h5 {
+	background-color: #282828;
+	margin: 0;
+	padding: 0 10px;
+	font-family: SimSun, serif;
+	font-size: 0.8rem;
+	border-radius: 15%;
+	-webkit-border-radius: 15%;
+	-moz-border-radius: 15%;
+	-ms-border-radius: 15%;
+	-o-border-radius: 15%;
+}
+
+#controlPanel #panels .panel #textureSettings ul {
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	margin: 0;
+}
+
+#controlPanel #panels .panel #textureSettings ul li {
+	display: flex;
+}
+
+#controlPanel #panels .panel #textureSettings .texture-label {
+    display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+#controlPanel #panels .panel #textureSettings .texture-label i {
+	content: "";
+	box-sizing: border-box;
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin: 4px 10px;
+	background-color: #282828;
+	border: 1px solid #646464;
+	border-radius: 50%;
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	-ms-border-radius: 50%;
+	-o-border-radius: 50%;
+	transition: background-color .2s, border .2s;
+	-webkit-transition: background-color .2s, border .2s;
+	-moz-transition: background-color .2s, border .2s;
+	-ms-transition: background-color .2s, border .2s;
+	-o-transition: background-color .2s, border .2s;
+}
+
+#controlPanel #panels .panel #textureSettings .texture-label:hover i {
+	background-color: #969696;
+}
+
+#controlPanel #panels .panel #textureSettings input[type="radio"]:checked +  .texture-label i {
+    background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #textureSettings #earthTexture h5 {
+	line-height: 72px;
+}
+
+#controlPanel #panels .panel #textureSettings #sunTexture h5 {
+	line-height: 48px;
+}
+
+#controlPanel #panels .panel #textureSettings #starland h5 {
+	line-height: 48px;
+}
+
+#controlPanel #panels .panel #PIPSettings ul {
+    margin: 10px 0;
+	align-items: start;
+}
+
+#controlPanel #panels .panel #PIPSettings ul li {
+	display: flex;
+    flex-direction: column;
+}
+
+#controlPanel #panels .panel #PIPSettings h5{
+	margin: 0;
+	padding: 0;
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+	font-weight: 400;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="PIPSwitch"]{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	width: 130px;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="PIPSwitch"] i{
+	display: flex;
+	width: 32px;
+	height: 18px;
+	border-radius: 9px;
+	-webkit-border-radius: 9px;
+	-moz-border-radius: 9px;
+	-ms-border-radius: 9px;
+	-o-border-radius: 9px;
+	background-color: #969696;
+	transition: background-color .2s;
+	-webkit-transition: background-color .2s;
+	-moz-transition: background-color .2s;
+	-ms-transition: background-color .2s;
+	-o-transition: background-color .2s;
+	flex-direction: column;
+	justify-content: center;
+}
+
+#controlPanel #panels .panel #PIPSettings input[type="checkbox"]:checked + label[for="PIPSwitch"] i {
+	background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="PIPSwitch"] i::before{
+	content: "";
+	position: relative;
+	display: inline-block;
+	left: 3px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	-ms-border-radius: 50%;
+	-o-border-radius: 50%;
+	background-color: #ffffff;
+	transition: margin-left .2s;
+	-webkit-transition: margin-left .2s;
+	-moz-transition: margin-left .2s;
+}
+
+#controlPanel #panels .panel #PIPSettings input[type="checkbox"]:checked + label[for="PIPSwitch"] i::before {
+	margin-left: 14px;
+}
+
+#controlPanel #panels .panel #PIPSettings label[for="latitudePos"] {
+	margin: 0;
+	padding: 0 0 5px 0;
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos {
+	height: 40px;
+	appearance: none;
+	background-color: #e0e0e0;
+	border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	text-align: center;
+	z-index: 1;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos:hover {
+	box-shadow: #c9a35c 0 0 6px;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos option {
+	font-family: SimSun, serif;
+	font-size: 0.8rem;
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos option:hover {
+	background-color: #181818
+}
+
+#controlPanel #panels .panel #PIPSettings #latitudePos option:checked {
+	background-color: #c9a35c
+}
+
+#controlPanel #panels .panel #speedSettings ul {
+	display: flex;
+	flex-direction: row;
+	width: 270px;
+	justify-content: space-between;
+	align-items: start;
+}
+
+#controlPanel #panels .panel #speedSettings ul li{
+    display: flex;
+	flex-direction: row;
+	align-items: center;
+	margin-top: 10px;
+}
+
+#controlPanel #panels .panel h5 {
+	font-family: SimSun, serif;
+	font-size: 0.9rem;
+	font-weight: 300;
+	margin: 0;
+}
+
+#controlPanel #panels .panel #speedSettings #speedInput {
+	width: 136px;
+	margin: 0 14px;
+	appearance: none;
+}
+
+#controlPanel #panels .panel #speedSettings #speedInput::-webkit-slider-runnable-track {
+    background: white;
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    -ms-border-radius: 10px;
+    -o-border-radius: 10px;
+    width: 100%;
+    height: 4px;
+}
+
+#controlPanel #panels .panel #speedSettings #speedInput::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: none;
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+    background: #c9a35c;
+    margin-top: -4px;
+    transition: background-color .2s;
+    -webkit-transition: background-color .2s;
+}
+
+#controlPanel #panels .panel #speedSettings label[for="reserveSwitch"],
+#controlPanel #panels .panel #speedSettings label[for="stopSwitch"]{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	margin-left: 12px;
+}
+
+#controlPanel #panels .panel #speedSettings label[for="reserveSwitch"] i,
+#controlPanel #panels .panel #speedSettings label[for="stopSwitch"] i{
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;;
+	width: 32px;
+	height: 18px;
+	border-radius: 9px;
+	-webkit-border-radius: 9px;
+	-moz-border-radius: 9px;
+	-ms-border-radius: 9px;
+	-o-border-radius: 9px;
+	background-color: #969696;
+	transition: background-color .2s;
+	-webkit-transition: background-color .2s;
+	-moz-transition: background-color .2s;
+	-ms-transition: background-color .2s;
+	-o-transition: background-color .2s;
+}
+
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="reserveSwitch"] i,
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="stopSwitch"] i{
+	background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #speedSettings label[for="reserveSwitch"] i::before,
+#controlPanel #panels .panel #speedSettings label[for="stopSwitch"] i::before{
+	content: "";
+	position: relative;
+	display: inline-block;
+	left: 3px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	-ms-border-radius: 50%;
+	-o-border-radius: 50%;
+	background-color: #ffffff;
+	transition: margin-left .2s;
+	-webkit-transition: margin-left .2s;
+	-moz-transition: margin-left .2s;
+}
+
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="reserveSwitch"] i::before,
+#controlPanel #panels .panel #speedSettings input[type="checkbox"]:checked + label[for="stopSwitch"] i::before{
+	margin-left: 14px;
+}
+
+#controlPanel #panels .panel #timeSettings ul {
+    display: flex;
+	flex-direction: column;
+	margin: 4px 0 0 0;
+	align-items: start;
+}
+
+#controlPanel #panels .panel #timeSettings ul li {
+	display: flex;
+    flex-direction: row;
+	align-items: center;
+	width: 280px;
+	margin-top: 4px;
+}
+
+#controlPanel #panels .panel #timeSettings h5{
+    margin: 2px 0;
+}
+
+#controlPanel #panels .panel #timeSettings input[type="date"] {
+	background-color: #cccccc;
+	color: black;
+	border: #a68d60 solid 1px;
+	border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	margin: 4px 4px;
+	padding: 0 4px;
+	width: 160px;
+	height: 18px;
+    margin-left: 20px;
+}
+
+#controlPanel #panels .panel #timeSettings #dateSubmit {
+	appearance: none;
+	height: 20px;
+	width: 20px;
+	border: #a68d60 solid 1px;
+	background-color: #282828;
+	border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	padding: 0;
+}
+
+
+#controlPanel #panels .panel #timeSettings #dateSubmit:hover {
+	background-color: #9f803c;
+}
+
+#controlPanel #panels .panel #timeSettings #dateSubmit:active {
+	border: #282828 solid 1px;
+	background-color: #c9a35c;
+}
+
+
+
+#controlPanel #panels .panel #timeSettings button {
+	appearance: none;
+	height: 30px;
+	width: 64px;
+	border: #a68d60 solid 1px;
+	background-color: #282828;
+	color: #c0c0c0;
+	border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	margin: 4px 4px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+}
+
+#controlPanel #panels .panel #timeSettings button#nextSolarEclipse,
+#controlPanel #panels .panel #timeSettings button#nextLunarEclipse {
+	width: 132px;
+}
+
+#controlPanel #panels .panel #timeSettings button:hover {
+	background-color: #9f803c;
+}
+
+#controlPanel #panels .panel #timeSettings button:active {
+	border: #282828 solid 1px;
+	background-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #sizeSettings ul {
+    display: flex;
+	flex-direction: row;
+	align-items: start;
+}
+
+#controlPanel #panels .panel #sizeSettings ul li {
+	display: flex;
+    flex-direction: column;
+}
+
+#controlPanel #panels .panel #sizeSettings .size-label {
+	display: flex;
+	flex-direction: column
+}
+
+#controlPanel #panels .panel #sizeSettings .size-label i{
+	background-color: #282828;
+	box-sizing: border-box;
+	width: 60px;
+	height: 60px;
+	margin: 0 10px 10px 10px;
+	border-radius: 15%;
+	-webkit-border-radius: 15%;
+	-moz-border-radius: 15%;
+	-ms-border-radius: 15%;
+	-o-border-radius: 15%;
+	font-size: 32px;
+	text-align: center;
+	line-height: 60px;
+	transition: color .2s, border .2s;
+	-webkit-transition: color .2s, border .2s;
+	-moz-transition: color .2s, border .2s;
+	-ms-transition: color .2s, border .2s;
+	-o-transition: color .2s, border .2s;
+}
+
+#controlPanel #panels .panel #sizeSettings input[type="radio"]:checked + .size-label i {
+    color: #c9a35c;
+	border: #c9a35c 2px solid;
+}
+
+#controlPanel #panels .panel #sizeSettings .size-label span{
+	text-align: center;
+}
+
+#controlPanel #panels .panel #sizeSettings input[type="radio"]:checked + .size-label span {
+	color: #c9a35c;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; transform: translateY(16px); -webkit-transform: translateY(16px); -moz-transform: translateY(16px); -ms-transform: translateY(16px); -o-transform: translateY(16px); }
+	to { opacity: 1; transform: none;}
+}
+
+#toolBar {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 1002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(36,32,28,0.72);;
+  backdrop-filter: blur(4px);
+  border-radius: 17px;
+  min-width: 48px;
+  box-shadow: 0 4px 32px 0 rgba(52,38,17,.18);
+  padding: 14px 7px;
+  gap: 0;
+}
+
+.tool-btn {
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 7px 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.92;
+  transition: background .16s, opacity .16s;
+  -webkit-transition: background .16s, opacity .16s;
+  -moz-transition: background .16s, opacity .16s;
+  -ms-transition: background .16s, opacity .16s;
+  -o-transition: background .16s, opacity .16s;
+}
+
+.tool-btn:active,
+.tool-btn:hover {
+  background: #59422a;
+}
+
+.tool-btn i{
+    color: #c9a35c
+}
+
+#toolBar hr {
+  width: 30px;
+  height: 1px;
+  border: 0;
+  background: #a68d60;
+  margin: 9px 0;
+}
+
