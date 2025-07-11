@@ -9,7 +9,7 @@
 <body>
   <!-- 界面ui -->
   <div id="title">
-    <img src="img/logo.png" alt="Solar System">
+    <img src="https://cdn.picui.cn/vip/2025/07/11/6870e6590199f.png" alt="Solar System">
     <h1>Solar System Sim</h1>
   </div>
   <!-- 仪表盘区域 -->
@@ -93,7 +93,7 @@
             <h5>地球贴图</h5>
             <ul>
               <li>
-                <input type="radio" name="earth-texture" id="solid-blue" value="solid-blue" checked hidden>
+                <input type="radio" name="earth-texture" id="solid-blue" value="solid-blue" hidden>
                 <label for="solid-blue" class="texture-label">
                   <i></i>
                   <span>纯蓝色</span>
@@ -107,7 +107,7 @@
                 </label>
               </li>
               <li>
-                <input type="radio" name="earth-texture" id="satellite-map" value="satellite-map" hidden>
+                <input type="radio" name="earth-texture" id="satellite-map" value="satellite-map" checked hidden>
                 <label for="satellite-map" class="texture-label">
                   <i></i>
                   <span>卫星地图</span>
@@ -119,14 +119,14 @@
             <h5>太阳贴图</h5>
             <ul>
               <li>
-                <input type="radio" name="sun-texture" id="solid-orange" value="solid-orange" checked hidden>
+                <input type="radio" name="sun-texture" id="solid-orange" value="solid-orange" hidden>
                 <label for="solid-orange" class="texture-label">
                   <i></i>
                   <span>纯橙色</span>
                 </label>
               </li>
               <li>
-                <input type="radio" name="sun-texture" id="true-surface" value="true-surface" hidden>
+                <input type="radio" name="sun-texture" id="true-surface" value="true-surface" checked hidden>
                 <label for="true-surface" class="texture-label">
                   <i></i>
                   <span>真实表面</span>
@@ -138,17 +138,17 @@
             <h5>星空背景</h5>
             <ul>
               <li>
-                <input type="radio" name="starland" id="sl-opt1" value="sl-opt1" checked hidden>
-                <label for="sl-opt1" class="texture-label">
+                <input type="radio" name="starland" id="solid-black" value="solid-black" hidden>
+                <label for="solid-black" class="texture-label">
                   <i></i>
-                  <span>TODO1</span>
+                  <span>纯黑</span>
                 </label>
               </li>
               <li>
-                <input type="radio" name="starland" id="sl-opt2" value="sl-opt2" hidden>
-                <label for="sl-opt2" class="texture-label">
+                <input type="radio" name="starland" id="stars" value="stars" checked hidden>
+                <label for="stars" class="texture-label">
                   <i></i>
-                  <span>TODO2</span>
+                  <span>繁星</span>
                 </label>
               </li>
             </ul>
@@ -285,6 +285,15 @@
   <!-- 引入 Three.js CDN -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script>
+    // 天体和运动参数
+    const frameRate = 60; //动画帧数
+    const earthRevolveAnglePerDay = 0.017202; //地球每天公转的角度（弧度）
+    const earthRotateAnglePerDay = 6.283185; //地球每天自转的角度
+    const moonRevolveAnglePerDay = 0.229985; //月球每天公转的角度(恒星坐标系)
+    const moonRotateAnglePerDay = 0.229985; //月球每天自转的角度
+
+
+
     // 场景、相机、渲染器
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -299,18 +308,27 @@
 
     // 创建纹理加载器
     const textureLoader = new THREE.TextureLoader();
+    const sunTextureTrue = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/sun.jpg');
+    const sunTextureOrange = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/orange.jpg');
+    const earthTextureSatellite = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/earth-sate.jpg');
+    const earthTextureCommon = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/earth-common.png");
+    const earthTextureBlue = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/transparent.png");
+
 
     // 创建太阳
     const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
-    const sunMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0xffaa00,
-      emissive: 0xff4400
+    const sunMaterial = new THREE.MeshLambertMaterial({
+      map: sunTextureTrue,
+      color: 0xfcf083,
+      emissive: 0xfcf083,
+      emissiveMap: sunTextureTrue,
+      emissiveIntensity: 0.8
     });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     scene.add(sun);
 
     // 太阳光源
-    const sunLight = new THREE.PointLight(0xffffff, 5, 100);
+    const sunLight = new THREE.PointLight(0xffffff, 100, 1000);
     sunLight.position.set(0, 0, 0);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -318,28 +336,17 @@
     scene.add(sunLight);
 
     // 环境光
-    const ambientLight = new THREE.AmbientLight(0x101010, 0.1);
+    const ambientLight = new THREE.AmbientLight(0x101010, 30);
     scene.add(ambientLight);
 
     // 创建地球
     const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
     const earthMaterial = new THREE.MeshPhongMaterial({ 
-      color: 0x4488ff,
-      shininess: 30
+      color: 0xcfe3fc,
+      shininess: 30,
+      map: earthTextureSatellite,
     });
-    
-    // 加载地球纹理
-    textureLoader.load(
-      'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
-      function (texture) {
-        earthMaterial.map = texture;
-        earthMaterial.needsUpdate = true;
-      },
-      undefined,
-      function (error) {
-        console.log('地球纹理加载失败，使用默认蓝色');
-      }
-    );
+    earthMaterial.needUpdate = true;
     
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     earth.castShadow = true;
@@ -389,6 +396,9 @@
     const moonOrbitRing = new THREE.Mesh(moonOrbitGeometry, moonOrbitMaterial);
     moonOrbitRing.rotation.x = -Math.PI / 2;
     earth.add(moonOrbitRing);
+
+    //星空
+    const starfield = createStarfield(scene, 2000, 800);
 
     // 相机位置
     camera.position.z = 10;
@@ -442,11 +452,49 @@
     
     animate();
 
+    function createStarfield(scene, count = 10000, radius = 1000) {
+      // 创建星星位置的缓冲区
+      const positions = new Float32Array(count * 3);
+      // 随机生成星星位置（在球体内均匀分布）
+      for (let i = 0; i < count; i++) {
+          const i3 = i * 3;
+          // 在球体表面随机位置
+          const phi = Math.random() * Math.PI * 2; // 方位角
+          const theta = Math.random() * Math.PI;   // 极角
+          // 球面坐标转笛卡尔坐标
+          positions[i3] = radius * Math.sin(theta) * Math.cos(phi);   // x
+          positions[i3 + 1] = radius * Math.sin(theta) * Math.sin(phi); // y
+          positions[i3 + 2] = radius * Math.cos(theta);                // z
+      }
+      // 创建几何体并设置位置属性
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      // 创建星星材质
+      const material = new THREE.PointsMaterial({
+          color: 0xffffff,
+          size: 2,               // 星星大小
+          sizeAttenuation: true, // 远处星星看起来更小
+          transparent: true,     // 启用透明度
+          opacity: 0.8           // 整体透明度
+      });
+      // 创建点云对象
+      const starfield = new THREE.Points(geometry, material);
+      // 设置渲染顺序，确保在所有物体之后渲染
+      starfield.renderOrder = -100;
+      starfield.frustumCulled = false; // 防止相机外的星星被剔除
+      // 添加到场景
+      scene.add(starfield);
+      return starfield;
+    }
+
     /* ui界面和交互 */
     const controlBtn = document.getElementById('controlBtn');
     const controlPanel = document.getElementById('controlPanel');
     const tabs = document.querySelectorAll('#tabs .tab');
     const panels = document.querySelectorAll('#panels .panel');
+    const earthTextureRadios = document.querySelectorAll('#earthTexture input');
+    const sunTextureRadios = document.querySelectorAll('#sunTexture input');
+    const starlandRadios = document.querySelectorAll('#starland input');
     const speedInput = document.getElementById('speedInput');
     const speedLabel = document.getElementById('speedLabel');
     let isControlPanelOpen = false;
@@ -454,6 +502,24 @@
 
     controlBtn.addEventListener('click', switchControlPanel);
     tabs.forEach(tab => { tab.addEventListener('click', switchTab); });
+    earthTextureRadios.forEach(radio => { 
+      radio.addEventListener('change', () => {
+        if (radio.checked) 
+          changeEarthTexture(radio.value);
+      }); 
+    });
+    sunTextureRadios.forEach(radio => { 
+      radio.addEventListener('change', () => {
+        if (radio.checked) 
+          changeSunTexture(radio.value);
+      }); 
+    });
+    starlandRadios.forEach(radio => { 
+      radio.addEventListener('change', () => {
+        if (radio.checked) 
+          changeStarland(radio.value);
+      }); 
+    });
     speedInput.addEventListener('input', updateSpeedFactor);
 
     function switchControlPanel(){
@@ -482,8 +548,40 @@
       speedLabel.innerHTML = 'x' + speedFactor;
     }
 
-    
+    function changeEarthTexture(value) {
+      if (value == "common-map"){
+        earthMaterial.map = earthTextureCommon;
+        earthMaterial.color = new THREE.Color(0xcccccc);
+      }
+      else if (value == "satellite-map"){
+        earthMaterial.map = earthTextureSatellite;
+        earthMaterial.color = new THREE.Color(0xcfe3fc);
+      }
+      else{
+        earthMaterial.map = earthTextureBlue;
+        earthMaterial.color = new THREE.Color(0x4488ff);
+      }
+    }
 
+    function changeSunTexture(value) {
+      if (value == "true-surface"){
+        sunMaterial.map = sunTextureTrue;
+        sunMaterial.emissiveMap = sunTextureTrue;
+      }
+      else{
+        sunMaterial.map = sunTextureOrange;
+        sunMaterial.emissiveMap = sunTextureOrange;
+      }
+    }
+
+    function changeStarland(value) {
+      if (value == "stars"){
+        starfield.visible = true;
+      }
+      else{
+        starfield.visible = false;
+      }
+    }
   </script>
 </body>
 </html>
