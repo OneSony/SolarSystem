@@ -12,6 +12,23 @@
     <img src="img/logo.png" alt="Solar System">
     <h1>Solar System Sim</h1>
   </div>
+  <!-- 仪表盘区域 -->
+  <div id="dashboard">
+    <div class="dashboard-item">
+      <span class="db-label">当前日期</span>
+      <span class="db-value" id="db-date">2000-1-1</span>
+    </div>
+    <div class="dashboard-divider"></div>
+    <div class="dashboard-item">
+      <span class="db-label">速度比例</span>
+      <span class="db-value" id="db-speed">1d/s</span>
+    </div>
+    <div class="dashboard-divider"></div>
+    <div class="dashboard-item">
+      <span class="db-label">沙罗周期进度</span>
+      <span class="db-value" id="db-saros">0%</span>
+    </div>
+  </div>
   <!-- 控制面板 -->
   <button id="controlBtn" aria-label="打开/关闭控制面板">
     <span>≡</span>
@@ -225,6 +242,7 @@
           <ul>
             <li>
               <input type="radio" name="size" id="suitable-size" value="suitable-size" checked hidden>
+              
               <label for="suitable-size" class="size-label">
                 <i class="fa fa-eye"></i>
                 <span>适宜观察</span>
@@ -244,6 +262,25 @@
       </div>
     </div>
   </aside>
+  <nav id="toolBar">
+    <button class="tool-btn" id="toolPause" title="暂停">
+      <i class="fa fa-pause"></i>
+    </button>
+    <button class="tool-btn" id="toolSpeed" title="速度">
+      <i>x1</i>
+    </button>
+    <hr>
+    <button class="tool-btn" id="toolView" title="切换视角">
+      <i class="fa fa-eye"></i>
+    </button>
+    <button class="tool-btn" id="toolScreenshot" title="截图">
+      <i class="fa fa-camera"></i>
+    </button>
+    <hr>
+    <button class="tool-btn" id="toolHelp" title="帮助">
+      <i class="fa fa-question"></i>
+    </button>
+  </nav>
 
   <!-- 引入 Three.js CDN -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
