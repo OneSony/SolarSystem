@@ -39,8 +39,8 @@ button {
 #dashboard {
   position: fixed;
   top: 28px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 96%;
+  transform: translateX(-100%);
   z-index: 1010;
   display: flex;
   align-items: center;
@@ -53,6 +53,10 @@ button {
   max-width: 96vw;
   gap: 0;
   opacity: 0.97;
+  -webkit-transform: translateX(-100%);
+  -moz-transform: translateX(-100%);
+  -ms-transform: translateX(-100%);
+  -o-transform: translateX(-100%);
 }
 .dashboard-item {
   display: flex;

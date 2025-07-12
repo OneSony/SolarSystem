@@ -7,12 +7,13 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- 界面ui -->
+  <!------ 标题 ------>
   <div id="title">
-    <img src="img/logo.png" alt="Solar System">
+    <img src="https://cdn.picui.cn/vip/2025/07/11/6870e6590199f.png" alt="Solar System">
     <h1>Solar System Sim</h1>
   </div>
-  <!-- 仪表盘区域 -->
+
+  <!------ 仪表盘区域 ------>
   <div id="dashboard">
     <div class="dashboard-item">
       <span class="db-label">当前日期</span>
@@ -29,11 +30,13 @@
       <span class="db-value" id="db-saros">0%</span>
     </div>
   </div>
-  <!-- 控制面板 -->
+
+  <!------ 控制面板 ------>
   <button id="controlBtn" aria-label="打开/关闭控制面板">
     <span>≡</span>
   </button>
   <aside id="controlPanel">
+    <!---- 标签页切换导航 ---->
     <nav id="tabs">
       <button class="tab active" data-tab="page1">
         <i class="fa fa-info-circle"></i>
@@ -48,12 +51,16 @@
         <span>参数</span>
       </button>
     </nav>
+    <!---- 标签页内容 ---->
     <div id="panels">
+      <!-- 标签页1：信息页 -->
       <div class="panel active" id="page1">
         <h3>基本信息</h3>
         <p>TODO: 放置关于天体科普（如天体参数、沙罗周期等）或者网页信息（如网页简介、开发者信息、功能描述等）的内容</p>
       </div>
+      <!-- 标签页2：视图页 -->
       <div class="panel" id="page2">
+        <!-- 控制块：相机视角 -->
         <div class="contorl-block" id="viewSettings">
           <h4>
             <span class="zh">相机视角</span>
@@ -84,6 +91,7 @@
           </ul>
         </div>
         <hr>
+        <!-- 控制块：贴图纹理 -->
         <div class="contorl-block" id="textureSettings">
           <h4>
             <span class="zh">贴图纹理</span>
@@ -93,7 +101,7 @@
             <h5>地球贴图</h5>
             <ul>
               <li>
-                <input type="radio" name="earth-texture" id="solid-blue" value="solid-blue" checked hidden>
+                <input type="radio" name="earth-texture" id="solid-blue" value="solid-blue" hidden>
                 <label for="solid-blue" class="texture-label">
                   <i></i>
                   <span>纯蓝色</span>
@@ -107,7 +115,7 @@
                 </label>
               </li>
               <li>
-                <input type="radio" name="earth-texture" id="satellite-map" value="satellite-map" hidden>
+                <input type="radio" name="earth-texture" id="satellite-map" value="satellite-map" checked hidden>
                 <label for="satellite-map" class="texture-label">
                   <i></i>
                   <span>卫星地图</span>
@@ -119,14 +127,14 @@
             <h5>太阳贴图</h5>
             <ul>
               <li>
-                <input type="radio" name="sun-texture" id="solid-orange" value="solid-orange" checked hidden>
+                <input type="radio" name="sun-texture" id="solid-orange" value="solid-orange" hidden>
                 <label for="solid-orange" class="texture-label">
                   <i></i>
                   <span>纯橙色</span>
                 </label>
               </li>
               <li>
-                <input type="radio" name="sun-texture" id="true-surface" value="true-surface" hidden>
+                <input type="radio" name="sun-texture" id="true-surface" value="true-surface" checked hidden>
                 <label for="true-surface" class="texture-label">
                   <i></i>
                   <span>真实表面</span>
@@ -138,23 +146,24 @@
             <h5>星空背景</h5>
             <ul>
               <li>
-                <input type="radio" name="starland" id="sl-opt1" value="sl-opt1" checked hidden>
-                <label for="sl-opt1" class="texture-label">
+                <input type="radio" name="starland" id="solid-black" value="solid-black" hidden>
+                <label for="solid-black" class="texture-label">
                   <i></i>
-                  <span>TODO1</span>
+                  <span>纯黑</span>
                 </label>
               </li>
               <li>
-                <input type="radio" name="starland" id="sl-opt2" value="sl-opt2" hidden>
-                <label for="sl-opt2" class="texture-label">
+                <input type="radio" name="starland" id="stars" value="stars" checked hidden>
+                <label for="stars" class="texture-label">
                   <i></i>
-                  <span>TODO2</span>
+                  <span>繁星</span>
                 </label>
               </li>
             </ul>
           </div>
         </div>
         <hr>
+        <!-- 控制块：日月食画中画 -->
         <div class="contorl-block" id="PIPSettings">
           <h4>
             <span class="zh">日月食画中画</span>
@@ -180,7 +189,9 @@
         </div>
       <p>TODO: 或许有一些其他需要的配置</p>
       </div>
+      <!-- 标签页3：参数调整 -->
       <div class="panel" id="page3">
+        <!-- 控制块：速度控制 -->
         <div class="contorl-block" id="speedSettings">
           <h4>
             <span class="zh">速度控制</span>
@@ -209,6 +220,7 @@
           </ul>
         </div>
         <hr>
+        <!-- 控制块：时间控制 -->
         <div class="contorl-block" id="timeSettings">
           <h4>
             <span class="zh">时间控制</span>
@@ -216,16 +228,16 @@
           </h4>
           <ul><li>
             <h5>日期跳转</h5>
-            <input type="date">
-            <button id="dateSubmit"><i class="fa fa-check"></i></button>
+            <input type="date" id="dateInput">
+            <button id="dateSubmit" onclick="onClickDateSubmit()"><i class="fa fa-check"></i></button>
           </li></ul>
           <ul>
             <h5>快捷选择</h5>
             <li>
-              <button id="oneYearAgo">-1年</button>
-              <button id="oneMonthAgo">-1月</button>
-              <button id="oneMonthForward">+1月</button>
-              <button id="oneYearForward">+1年</button>
+              <button id="oneYearAgo" onclick="dateJumpBy(-365)">-1年</button>
+              <button id="oneMonthAgo" onclick="dateJumpBy(-30)">-1月</button>
+              <button id="oneMonthForward" onclick="dateJumpBy(30)">+1月</button>
+              <button id="oneYearForward" onclick="dateJumpBy(365)">+1年</button>
             </li>
             <li>
               <button id="nextSolarEclipse">下一次日食</button>
@@ -234,6 +246,7 @@
           </ul>
         </div>
         <hr>
+        <!-- 控制块：天体尺寸 -->
         <div class="contorl-block" id="sizeSettings">
           <h4>
             <span class="zh">天体尺寸</span>
@@ -262,18 +275,20 @@
       </div>
     </div>
   </aside>
+
+  <!------ 小工具条 ------>
   <nav id="toolBar">
-    <button class="tool-btn" id="toolPause" title="暂停">
+    <button class="tool-btn" id="toolPause" title="暂停" onclick="clickOnToolPause()">
       <i class="fa fa-pause"></i>
     </button>
-    <button class="tool-btn" id="toolSpeed" title="速度">
+    <button class="tool-btn" id="toolSpeed" title="速度" onclick="clickOnToolSpeed()">
       <i>x1</i>
     </button>
     <hr>
     <button class="tool-btn" id="toolView" title="切换视角">
       <i class="fa fa-eye"></i>
     </button>
-    <button class="tool-btn" id="toolScreenshot" title="截图">
+    <button class="tool-btn" id="toolScreenshot" title="截图" onclick="clickOnToolScreenshot()">
       <i class="fa fa-camera"></i>
     </button>
     <hr>
@@ -282,65 +297,105 @@
     </button>
   </nav>
 
-  <!-- 引入 Three.js CDN -->
+  <!--------------------------------------------->
+  <!------------ 下面是JavaScript代码 ------------>
+  <!--------------------------------------------->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
   <script>
-    // 场景、相机、渲染器
+    /* * * * * * * * * *
+     * 重要全局变量定义
+     * * * * * * * * * */
+    // 公共变量：控件
+    const controlBtn = document.getElementById('controlBtn');
+    const controlPanel = document.getElementById('controlPanel');
+    const tabs = document.querySelectorAll('#tabs .tab');
+    const panels = document.querySelectorAll('#panels .panel');
+    const earthTextureRadios = document.querySelectorAll('#earthTexture input');
+    const sunTextureRadios = document.querySelectorAll('#sunTexture input');
+    const starlandRadios = document.querySelectorAll('#starland input');
+    const speedInput = document.getElementById('speedInput');
+    const speedLabel = document.getElementById('speedLabel');
+    const reserveSwitch = document.getElementById('reserveSwitch');
+    const stopSwitch = document.getElementById('stopSwitch');
+    const dateInput = document.getElementById('dateInput');
+    const dashboardDate = document.getElementById('db-date');
+    const dashboardSpeed = document.getElementById('db-speed');
+    const dashboardSaros = document.getElementById('db-saros');
+    const toolPause = document.getElementById('toolPause');
+    const toolSpeed = document.getElementById('toolSpeed');
+    let isControlPanelOpen = false;
+    let mouseDragging = false;
+
+    // 公共变量：天体和运动参数
+    const frameRate = 60; //动画帧数
+    const sunRotateAnglePerDay = 0.228729; //太阳每天自转的角度
+    const earthRevolveAnglePerDay = 0.017202; //地球每天公转的角度（弧度）
+    const earthRotateAnglePerDay = 6.283185; //地球每天自转的角度
+    const moonRevolveAnglePerDay = 0.229985; //月球每天公转的角度(恒星坐标系)
+    const moonRotateAnglePerDay = 0.229985; //月球每天自转的角度
+    const dateOrigin = new Date(2022, 11, 8); //日期原点（日地月共线，月球黄纬约为0）
+    let dateCurrent = new Date(dateOrigin); //当前日期
+    let days = 0;             //经历天数（当前日期与原点相差天数）
+    const sarosCurrent = 6585.32; //沙罗周期：6585.32天
+    let speedFactor = 1;      //速度因子
+    let isPaused = false;     //暂停
+    let isbackwards = false;  //倒退
+
+    // 公共变量：场景、相机、渲染器、纹理
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.z = 10;
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
+    let rendererLock = false;    //渲染器锁
+    const textureLoader = new THREE.TextureLoader();
+    const sunTextureTrue = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/sun.jpg');
+    const sunTextureOrange = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/orange.jpg');
+    const earthTextureSatellite = textureLoader.load('https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/earth-sate.jpg');
+    const earthTextureCommon = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/earth-common.png");
+    const earthTextureBlue = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/transparent.png");
+    const moonTexture = textureLoader.load("https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/moon.png");
 
+
+    /* * * * * * * * * *
+     * 3D场景初始化
+     * * * * * * * * * */
     // 设置背景
     scene.background = new THREE.Color(0x0d0f13);
 
-    // 创建纹理加载器
-    const textureLoader = new THREE.TextureLoader();
-
     // 创建太阳
     const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
-    const sunMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0xffaa00,
-      emissive: 0xff4400
+    const sunMaterial = new THREE.MeshLambertMaterial({
+      map: sunTextureTrue,
+      color: 0xfcf083,
+      emissive: 0xfcf083,
+      emissiveMap: sunTextureTrue,
+      emissiveIntensity: 0.8
     });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     scene.add(sun);
 
-    // 太阳光源
-    const sunLight = new THREE.PointLight(0xffffff, 5, 100);
+    // 光源：太阳光和环境光
+    const sunLight = new THREE.PointLight(0xffffff, 100, 1000);
     sunLight.position.set(0, 0, 0);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
     scene.add(sunLight);
-
-    // 环境光
-    const ambientLight = new THREE.AmbientLight(0x101010, 0.1);
+    const ambientLight = new THREE.AmbientLight(0x101010, 30);
     scene.add(ambientLight);
 
     // 创建地球
     const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
     const earthMaterial = new THREE.MeshPhongMaterial({ 
-      color: 0x4488ff,
-      shininess: 30
+      color: 0xcfe3fc,
+      shininess: 30,
+      map: earthTextureSatellite,
     });
-    
-    // 加载地球纹理
-    textureLoader.load(
-      'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
-      function (texture) {
-        earthMaterial.map = texture;
-        earthMaterial.needsUpdate = true;
-      },
-      undefined,
-      function (error) {
-        console.log('地球纹理加载失败，使用默认蓝色');
-      }
-    );
-    
+    earthMaterial.needUpdate = true;
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     earth.castShadow = true;
     earth.receiveShadow = true;
@@ -349,25 +404,24 @@
     const moonGeometry = new THREE.SphereGeometry(0.15, 16, 16);
     const moonMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xcccccc,
+      map: moonTexture,
       shininess: 10
     });
     const moon = new THREE.Mesh(moonGeometry, moonMaterial);
     moon.castShadow = true;
     moon.receiveShadow = true;
 
-    // 月球轨道设置
+    // 地球、月球轨道设置
     const moonOrbit = new THREE.Object3D();
     moonOrbit.add(moon);
     moon.position.x = 1.2;
     earth.add(moonOrbit);
-
-    // 地球轨道设置
     const earthOrbit = new THREE.Object3D();
     earthOrbit.add(earth);
     earth.position.x = 5;
     scene.add(earthOrbit);
 
-    // 轨道线
+    // 地球、月球轨道环显示
     const earthOrbitGeometry = new THREE.RingGeometry(4.8, 5.2, 64);
     const earthOrbitMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x444444, 
@@ -378,7 +432,6 @@
     const earthOrbitRing = new THREE.Mesh(earthOrbitGeometry, earthOrbitMaterial);
     earthOrbitRing.rotation.x = -Math.PI / 2;
     scene.add(earthOrbitRing);
-
     const moonOrbitGeometry = new THREE.RingGeometry(1.1, 1.3, 32);
     const moonOrbitMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x888888, 
@@ -390,72 +443,126 @@
     moonOrbitRing.rotation.x = -Math.PI / 2;
     earth.add(moonOrbitRing);
 
-    // 相机位置
-    camera.position.z = 10;
-
-    // 简单的动画参数
-    let time = 0;
+    //星空
+    const starfield = createStarfield(scene, 2000, 800);
+    function createStarfield(scene, count = 10000, radius = 1000) {
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+          const i3 = i * 3;
+          const phi = Math.random() * Math.PI * 2; 
+          const theta = Math.random() * Math.PI;   
+          positions[i3] = radius * Math.sin(theta) * Math.cos(phi); 
+          positions[i3 + 1] = radius * Math.sin(theta) * Math.sin(phi);
+          positions[i3 + 2] = radius * Math.cos(theta);
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const material = new THREE.PointsMaterial({
+          color: 0xffffff,
+          size: 2, 
+          sizeAttenuation: true,
+          transparent: true,   
+          opacity: 0.8           
+      });
+      const starfield = new THREE.Points(geometry, material);
+      starfield.renderOrder = -100;
+      starfield.frustumCulled = false; 
+      scene.add(starfield);
+      return starfield;
+    }
 
     // 鼠标控制
     let mouseX = 0, mouseY = 0;
     let targetX = 0, targetY = 0;
     const windowHalfX = window.innerWidth / 2;
     const windowHalfY = window.innerHeight / 2;
-
+    document.addEventListener('mousedown', (event) => {
+      mouseDragging = true;
+    })
+    document.addEventListener('mouseup', (event) => {
+      mouseDragging = false;
+    })
     document.addEventListener('mousemove', (event) => {
+      if(!mouseDragging) return;
       mouseX = (event.clientX - windowHalfX) * 0.005;
       mouseY = (event.clientY - windowHalfY) * 0.005;
     });
 
-    // 动画循环
+    /* * * * * * * * * *
+     * 动画更新
+     * * * * * * * * * */
     function animate() {
       requestAnimationFrame(animate);
-      
-      time += 0.01;
-      
-      // 太阳自转
-      sun.rotation.y += 0.005;
-      
-      // 地球公转
-      earthOrbit.rotation.y = time * 0.5;
-      
-      // 地球自转
-      earth.rotation.y += 0.02;
-      
-      // 月球公转
-      moonOrbit.rotation.y = time * 2;
-      
-      // 月球自转（与公转同步）
-      moon.rotation.y = time * 2;
-      
+      // 运动和时间更新
+      if(!isPaused){     
+        var dayDelta = 1 / 60 * speedFactor;
+        if(isbackwards) dayDelta = -dayDelta;
+        stepSimulation(dayDelta);
+      }
       // 相机控制
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;
-      
       camera.position.x = Math.sin(targetX) * 10;
       camera.position.y = targetY * 10;
       camera.position.z = Math.cos(targetX) * 10;
       camera.lookAt(scene.position);
-      
-      renderer.render(scene, camera);
+    
+      if(!rendererLock)  renderer.render(scene, camera);
     }
     
     animate();
 
-    /* ui界面和交互 */
-    const controlBtn = document.getElementById('controlBtn');
-    const controlPanel = document.getElementById('controlPanel');
-    const tabs = document.querySelectorAll('#tabs .tab');
-    const panels = document.querySelectorAll('#panels .panel');
-    const speedInput = document.getElementById('speedInput');
-    const speedLabel = document.getElementById('speedLabel');
-    let isControlPanelOpen = false;
-    let speedFactor = 1;
+    function  stepSimulation(dayDelta, totalDaysFlag = false) {
+      if(!totalDaysFlag){
+          //日期更新
+          days += dayDelta;
+          dateCurrent = new Date(dateOrigin.getTime() + days * 24 * 60 * 60 * 1000);
+          updateDate();
+          // 天体转动
+          sun.rotation.y += dayDelta * sunRotateAnglePerDay;
+          earthOrbit.rotation.y += dayDelta * earthRevolveAnglePerDay;
+          earth.rotation.y += dayDelta * (-earthRevolveAnglePerDay+earthRotateAnglePerDay);
+          moonOrbit.rotation.y += dayDelta * (-earthRotateAnglePerDay+moonRevolveAnglePerDay);
+          moon.rotation.y += 0;
+      }
+      else{
+          days = dayDelta;
+          dateCurrent = new Date(dateOrigin.getTime() + days * 24 * 60 * 60 * 1000);
+          updateDate();
+          // 天体转动
+          sun.rotation.y = days * sunRotateAnglePerDay;
+          earthOrbit.rotation.y = days * earthRevolveAnglePerDay;
+          earth.rotation.y = days * (-earthRevolveAnglePerDay+earthRotateAnglePerDay);
+          moonOrbit.rotation.y = days * (-earthRotateAnglePerDay+moonRevolveAnglePerDay);
+      }
+    }
 
+    /* * * * * * * * * * * *
+     * ui界面和交互函数
+     * * * * * * * * * * * */
+    //事件绑定
     controlBtn.addEventListener('click', switchControlPanel);
     tabs.forEach(tab => { tab.addEventListener('click', switchTab); });
-    speedInput.addEventListener('input', updateSpeedFactor);
+    earthTextureRadios.forEach(radio => { 
+      radio.addEventListener('change', () => {
+        if (radio.checked) changeEarthTexture(radio.value);
+      }); 
+    });
+    sunTextureRadios.forEach(radio => { 
+      radio.addEventListener('change', () => {
+        if (radio.checked) changeSunTexture(radio.value);
+      }); 
+    });
+    starlandRadios.forEach(radio => { 
+      radio.addEventListener('change', () => {
+        if (radio.checked) changeStarland(radio.value);
+      }); 
+    });
+    speedInput.addEventListener('input', changeSpeedFactor);
+    stopSwitch.addEventListener('change', changeStopSwitch);
+    reserveSwitch.addEventListener('change', changeReserveSwitch);
 
+    //控制面板开关
     function switchControlPanel(){
       if (isControlPanelOpen) {
         controlPanel.style.width = '0';
@@ -469,6 +576,7 @@
       }
     }
 
+    //控制面板标签页切换
     function switchTab() {
       tabs.forEach(t => t.classList.remove('active'));
       panels.forEach(p => p.classList.remove('active'));
@@ -476,14 +584,132 @@
       document.getElementById(this.dataset.tab).classList.add('active');
     }
 
-    function updateSpeedFactor() {
-      speedFactor = 2 ** speedInput.value;
-      speedFactor = speedFactor.toFixed(2);
-      speedLabel.innerHTML = 'x' + speedFactor;
+    //修改地球纹理
+    function changeEarthTexture(value) {
+      if (value == "common-map"){
+        earthMaterial.map = earthTextureCommon;
+        earthMaterial.color = new THREE.Color(0xcccccc);
+      }
+      else if (value == "satellite-map"){
+        earthMaterial.map = earthTextureSatellite;
+        earthMaterial.color = new THREE.Color(0xcfe3fc);
+      }
+      else{
+        earthMaterial.map = earthTextureBlue;
+        earthMaterial.color = new THREE.Color(0x4488ff);
+      }
     }
 
-    
+    //修改太阳纹理
+    function changeSunTexture(value) {
+      if (value == "true-surface"){
+        sunMaterial.map = sunTextureTrue;
+        sunMaterial.emissiveMap = sunTextureTrue;
+      }
+      else{
+        sunMaterial.map = sunTextureOrange;
+        sunMaterial.emissiveMap = sunTextureOrange;
+      }
+    }
 
+    //修改星空显示
+    function changeStarland(value) {
+      if (value == "stars"){
+        starfield.visible = true;
+      }
+      else{
+        starfield.visible = false;
+      }
+    }
+
+    //修改速度
+    function changeSpeedFactor() {
+      speedFactor = 2 ** speedInput.value;
+      if (speedFactor < 1)
+        speedFactor = speedFactor.toFixed(2);
+      else
+        speedFactor = speedFactor.toFixed(0);
+      speedLabel.innerHTML = 'x' + speedFactor;
+      toolSpeed.innerHTML = "<i>x" + speedFactor + "</i>";
+      dashboardSpeed.innerHTML = speedFactor + 'day/s';
+    }
+
+    //暂停、运行
+    function changeStopSwitch() {
+      if (stopSwitch.checked){
+        isPaused = true;
+        toolPause.innerHTML = '<i class="fa fa-play"></i>';
+      }
+      else{
+        isPaused = false;
+        toolPause.innerHTML = '<i class="fa fa-pause"></i>';
+      }
+    }
+
+    //倒退运行
+    function changeReserveSwitch() {
+      if (reserveSwitch.checked)
+        isbackwards = true;
+      else
+        isbackwards = false;
+    }
+
+    //日期跳转By
+    function dateJumpBy(value) { 
+      dayDelta = value;
+      stepSimulation(dayDelta);
+    }
+
+    //日期跳转To
+    function onClickDateSubmit(){
+      var dayValue = dateInput.value;
+      if (dayValue == '') return;
+      var dateTarget = new Date(dayValue);
+      var dayDelta = (dateTarget.getTime() - dateOrigin.getTime()) / (1000 * 60 * 60 * 24);
+      if(Math.abs(dayDelta-days) < 1) return;
+      stepSimulation(dayDelta, true);
+    }
+
+    //小工具条：暂停
+    function clickOnToolPause() {
+      stopSwitch.checked = !stopSwitch.checked;
+      changeStopSwitch();
+    }
+
+    //小工具条：速度
+    function clickOnToolSpeed(value) {
+      if(speedFactor >= 1 && speedFactor < 4) 
+        speedInput.value = 2;
+      else if(speedFactor >= 4 && speedFactor < 16) 
+        speedInput.value = 4;
+      else if(speedFactor >= 16 && speedFactor < 64) 
+        speedInput.value = 6;
+      else
+        speedInput.value = 0;
+      changeSpeedFactor();
+    }
+
+    //小工具条：截图
+    function clickOnToolScreenshot() {
+      rendererLock = true;
+      renderer.render(scene, camera);
+      var imgData = renderer.domElement.toDataURL("image/png");
+      rendererLock = false;
+      var link = document.createElement('a');
+      link.href = imgData;
+      link.download = 'screenshot.png';
+      link.click();
+    }
+
+    //日期更新
+    function updateDate() {
+      dashboardDate.innerHTML = dateCurrent.toLocaleString().split(' ')[0];
+      var sarosProgress = ((days % sarosCurrent) / sarosCurrent * 100);
+      if(sarosProgress < 0) sarosProgress = 100 + sarosProgress;
+      dashboardSaros.innerHTML = sarosProgress.toFixed(2) + '%';
+    }
+
+    // 一些工具函数
   </script>
 </body>
 </html>
