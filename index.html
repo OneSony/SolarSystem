@@ -161,6 +161,30 @@
               </li>
             </ul>
           </div>
+          <div id="earthAxis">
+            <h5>地轴显示</h5>
+            <ul>
+              <li>
+                <input type="checkbox" id="axisSwitch" checked hidden>
+                <label for="axisSwitch" class="texture-label">
+                  <i></i>
+                  <span>显示地轴</span>
+                </label>
+              </li>
+            </ul>
+          </div>
+          <div id="moonOrbitNormal">
+            <h5>月球轨道法向量</h5>
+            <ul>
+              <li>
+                <input type="checkbox" id="moonNormalSwitch" checked hidden>
+                <label for="moonNormalSwitch" class="texture-label">
+                  <i></i>
+                  <span>显示轨道法向量</span>
+                </label>
+              </li>
+            </ul>
+          </div>
         </div>
         <hr>
         <!-- 控制块：日月食画中画 -->
@@ -313,6 +337,8 @@
     const earthTextureRadios = document.querySelectorAll('#earthTexture input');
     const sunTextureRadios = document.querySelectorAll('#sunTexture input');
     const starlandRadios = document.querySelectorAll('#starland input');
+    const axisSwitch = document.getElementById('axisSwitch');
+    const moonNormalSwitch = document.getElementById('moonNormalSwitch');
     const speedInput = document.getElementById('speedInput');
     const speedLabel = document.getElementById('speedLabel');
     const reserveSwitch = document.getElementById('reserveSwitch');
@@ -333,6 +359,8 @@
     const earthRotateAnglePerDay = 6.283185; //地球每天自转的角度
     const moonRevolveAnglePerDay = 0.229985; //月球每天公转的角度(恒星坐标系)
     const moonRotateAnglePerDay = 0.229985; //月球每天自转的角度
+    // 月球轨道进动：2π / (18.6年 × 365.25天) = 2π / 6793天 ≈ 0.000924
+    const moonOrbitPrecessionPerDay = -0.000924; //月球轨道进动角速度（约18.6年一周期，逆行）
     const dateOrigin = new Date(2022, 11, 8); //日期原点（日地月共线，月球黄纬约为0）
     let dateCurrent = new Date(dateOrigin); //当前日期
     let days = 0;             //经历天数（当前日期与原点相差天数）
@@ -362,6 +390,27 @@
 
     /* * * * * * * * * *
      * 3D场景初始化
+     * 层次结构说明：
+     * scene
+     * ├── sun (太阳：自转)
+     * ├── earthOrbit (地球轨道：绕太阳公转)
+     * │   └── earthGroup (地球整体组合，位于轨道上)
+     * │       ├── earthRotationGroup (地球自转组：只包含地球球体)
+     * │       │   └── earthSphere (地球球体：跟随地球自转)
+     * │       ├── moonOrbitGroup (月球轨道组：相对黄道面倾斜5.15°，Z轴倾斜)
+     * │       │   └── moonOrbit (月球轨道：绕地球公转)
+     * │       │       └── moon (月球：潮汐锁定，一面朝地球)
+     * │       └── earthAxisGroup (地轴组：倾斜23.5°，Z轴倾斜，不自转)
+     * │           ├── earthAxis (地轴线)
+     * │           ├── northArrow (北极箭头)
+     * │           └── southArrow (南极箭头)
+     * ├── earthOrbitRing (地球轨道环)
+     * └── starfield (星空背景)
+     * 
+     * 倾斜方向说明：
+     * - 地轴倾斜23.5°，Z轴正方向倾斜(夏至时北极朝向太阳)
+     * - 月球轨道倾斜-5.15°，Z轴负方向，与地轴倾斜方向相对
+     * - 这种相对倾斜使得月球轨道与黄道面有交点，是日月食发生的关键
      * * * * * * * * * */
     // 设置背景
     scene.background = new THREE.Color(0x0d0f13);
@@ -388,7 +437,7 @@
     const ambientLight = new THREE.AmbientLight(0x101010, 30);
     scene.add(ambientLight);
 
-    // 创建地球
+    // 创建地球本体（只包含球体，不包含地轴）
     const earthGeometry = new THREE.SphereGeometry(0.5, 32, 32);
     const earthMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xcfe3fc,
@@ -396,9 +445,13 @@
       map: earthTextureSatellite,
     });
     earthMaterial.needUpdate = true;
-    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-    earth.castShadow = true;
-    earth.receiveShadow = true;
+    const earthSphere = new THREE.Mesh(earthGeometry, earthMaterial);
+    earthSphere.castShadow = true;
+    earthSphere.receiveShadow = true;
+
+    // 创建地球自转组（只包含地球球体）
+    const earthRotationGroup = new THREE.Object3D();
+    earthRotationGroup.add(earthSphere);
 
     // 创建月球
     const moonGeometry = new THREE.SphereGeometry(0.15, 16, 16);
@@ -411,14 +464,99 @@
     moon.castShadow = true;
     moon.receiveShadow = true;
 
-    // 地球、月球轨道设置
+    // 月球轨道组（绕地球公转）
     const moonOrbit = new THREE.Object3D();
     moonOrbit.add(moon);
     moon.position.x = 1.2;
-    earth.add(moonOrbit);
+
+    // 月球轨道倾斜组（相对黄道面倾斜5.15°）
+    const moonOrbitGroup = new THREE.Object3D();
+    moonOrbitGroup.add(moonOrbit);
+    // 月球轨道相对黄道面倾斜5.15度，倾斜方向与地轴相关
+    // 使用Z轴负方向倾斜，与地轴倾斜方向相对
+    moonOrbitGroup.rotation.z = THREE.MathUtils.degToRad(-5.15);
+    
+    // 注意：月球轨道的进动
+    // 1. moonOrbit.rotation.y 控制月球绕地球的公转（约27.3天一周期）
+    // 2. moonOrbitGroup.rotation.y 控制月球轨道面的进动（约18.6年一周期）
+    // 3. 月球轨道平面相对于黄道面倾斜约5.15度，倾斜方向与地轴相对
+    // 4. 月球轨道平面的方向会缓慢进动，交点线在黄道面上旋转
+
+    // 创建月球轨道法向量（显示轨道面的法线方向）
+    const moonOrbitNormalGeometry = new THREE.CylinderGeometry(0.01, 0.01, 1.5, 8);
+    const moonOrbitNormalMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xff0088,
+      transparent: true,
+      opacity: 1.0
+    });
+    const moonOrbitNormal = new THREE.Mesh(moonOrbitNormalGeometry, moonOrbitNormalMaterial);
+
+    // 创建法向量箭头（正方向）
+    const normalArrowGeometry = new THREE.ConeGeometry(0.03, 0.12, 8);
+    const normalArrowMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xff0088,
+      transparent: true,
+      opacity: 1.0
+    });
+    const normalArrowUp = new THREE.Mesh(normalArrowGeometry, normalArrowMaterial);
+    normalArrowUp.position.set(0, 0.81, 0);
+
+    // 创建法向量箭头（负方向）
+    const normalArrowDown = new THREE.Mesh(normalArrowGeometry, normalArrowMaterial);
+    normalArrowDown.position.set(0, -0.81, 0);
+    normalArrowDown.rotation.x = Math.PI;
+
+    // 月球轨道法向量组（位于轨道中心，垂直于轨道平面）
+    const moonOrbitNormalGroup = new THREE.Object3D();
+    moonOrbitNormalGroup.add(moonOrbitNormal);
+    moonOrbitNormalGroup.add(normalArrowUp);
+    moonOrbitNormalGroup.add(normalArrowDown);
+    
+    // 将法向量添加到月球轨道组中，这样它会跟随轨道倾斜和进动
+    moonOrbitGroup.add(moonOrbitNormalGroup);
+
+    // 创建地轴（独立的组，不跟随地球自转）
+    const axisGeometry = new THREE.CylinderGeometry(0.005, 0.005, 1.5, 8);
+    const axisMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xff4444,
+      transparent: true,
+      opacity: 0.8
+    });
+    const earthAxis = new THREE.Mesh(axisGeometry, axisMaterial);
+
+    // 创建地轴箭头（北极端）
+    const arrowGeometry = new THREE.ConeGeometry(0.02, 0.08, 8);
+    const arrowMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xff4444,
+      transparent: true,
+      opacity: 0.8
+    });
+    const northArrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+    northArrow.position.set(0, 0.79, 0);
+
+    // 创建地轴箭头（南极端）
+    const southArrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+    southArrow.position.set(0, -0.79, 0);
+    southArrow.rotation.x = Math.PI;
+
+    // 地轴组（包含轴线和箭头，有倾斜角度但不自转）
+    const earthAxisGroup = new THREE.Object3D();
+    earthAxisGroup.add(earthAxis);
+    earthAxisGroup.add(northArrow);
+    earthAxisGroup.add(southArrow);
+    // 地轴倾斜23.5度
+    earthAxisGroup.rotation.z = THREE.MathUtils.degToRad(23.5);
+
+    // 地球整体组（包含自转组 + 月球轨道组 + 地轴组）
+    const earthGroup = new THREE.Object3D();
+    earthGroup.add(earthRotationGroup);
+    earthGroup.add(moonOrbitGroup);
+    earthGroup.add(earthAxisGroup);
+
+    // 地球轨道组（地球整体绕太阳公转）
     const earthOrbit = new THREE.Object3D();
-    earthOrbit.add(earth);
-    earth.position.x = 5;
+    earthOrbit.add(earthGroup);
+    earthGroup.position.x = 5;
     scene.add(earthOrbit);
 
     // 地球、月球轨道环显示
@@ -441,7 +579,8 @@
     });
     const moonOrbitRing = new THREE.Mesh(moonOrbitGeometry, moonOrbitMaterial);
     moonOrbitRing.rotation.x = -Math.PI / 2;
-    earth.add(moonOrbitRing);
+    // 月球轨道环相对于月球轨道组的倾斜需要考虑到组本身的倾斜
+    moonOrbitGroup.add(moonOrbitRing);
 
     //星空
     const starfield = createStarfield(scene, 2000, 800);
@@ -521,8 +660,9 @@
           // 天体转动
           sun.rotation.y += dayDelta * sunRotateAnglePerDay;
           earthOrbit.rotation.y += dayDelta * earthRevolveAnglePerDay;
-          earth.rotation.y += dayDelta * (-earthRevolveAnglePerDay+earthRotateAnglePerDay);
-          moonOrbit.rotation.y += dayDelta * (-earthRotateAnglePerDay+moonRevolveAnglePerDay);
+          earthRotationGroup.rotation.y += dayDelta * earthRotateAnglePerDay;
+          moonOrbit.rotation.y += dayDelta * moonRevolveAnglePerDay;
+          moonOrbitGroup.rotation.y += dayDelta * moonOrbitPrecessionPerDay;
           moon.rotation.y += 0;
       }
       else{
@@ -532,8 +672,9 @@
           // 天体转动
           sun.rotation.y = days * sunRotateAnglePerDay;
           earthOrbit.rotation.y = days * earthRevolveAnglePerDay;
-          earth.rotation.y = days * (-earthRevolveAnglePerDay+earthRotateAnglePerDay);
-          moonOrbit.rotation.y = days * (-earthRotateAnglePerDay+moonRevolveAnglePerDay);
+          earthRotationGroup.rotation.y = days * earthRotateAnglePerDay;
+          moonOrbit.rotation.y = days * moonRevolveAnglePerDay;
+          moonOrbitGroup.rotation.y = days * moonOrbitPrecessionPerDay;
       }
     }
 
@@ -561,6 +702,8 @@
     speedInput.addEventListener('input', changeSpeedFactor);
     stopSwitch.addEventListener('change', changeStopSwitch);
     reserveSwitch.addEventListener('change', changeReserveSwitch);
+    axisSwitch.addEventListener('change', changeAxisVisibility);
+    moonNormalSwitch.addEventListener('change', changeMoonNormalVisibility);
 
     //控制面板开关
     function switchControlPanel(){
@@ -620,6 +763,16 @@
       else{
         starfield.visible = false;
       }
+    }
+
+    //修改地轴显示
+    function changeAxisVisibility() {
+      earthAxisGroup.visible = axisSwitch.checked;
+    }
+
+    //修改月球轨道法向量显示
+    function changeMoonNormalVisibility() {
+      moonOrbitNormalGroup.visible = moonNormalSwitch.checked;
     }
 
     //修改速度
