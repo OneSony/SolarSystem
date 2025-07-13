@@ -29,6 +29,16 @@
       <span class="db-label">沙罗周期进度</span>
       <span class="db-value" id="db-saros">0%</span>
     </div>
+    <div class="dashboard-divider"></div>
+    <div class="dashboard-item">
+      <span class="db-label">月相状态</span>
+      <span class="db-value" id="db-moonphase">新月</span>
+    </div>
+    <div class="dashboard-divider"></div>
+    <div class="dashboard-item">
+      <span class="db-label">对齐程度</span>
+      <span class="db-value" id="db-alignment">0%</span>
+    </div>
   </div>
 
   <!------ 控制面板 ------>
@@ -267,6 +277,9 @@
               <button id="nextSolarEclipse">下一次日食</button>
               <button id="nextLunarEclipse">下一次月食</button>
             </li>
+            <li>
+              <button id="analyzeAlignment" onclick="showAlignmentAnalysis()">分析当前对齐</button>
+            </li>
           </ul>
         </div>
         <hr>
@@ -391,6 +404,8 @@
     const dashboardDate = document.getElementById('db-date');
     const dashboardSpeed = document.getElementById('db-speed');
     const dashboardSaros = document.getElementById('db-saros');
+    const dashboardMoonPhase = document.getElementById('db-moonphase');
+    const dashboardAlignment = document.getElementById('db-alignment');
     const toolPause = document.getElementById('toolPause');
     const toolSpeed = document.getElementById('toolSpeed');
     const pipContainer = document.getElementById('pipContainer');
@@ -924,9 +939,14 @@
     //日期更新
     function updateDate() {
       dashboardDate.innerHTML = dateCurrent.toLocaleString().split(' ')[0];
+      
+      // 计算沙罗周期进度
       var sarosProgress = ((days % sarosCurrent) / sarosCurrent * 100);
       if(sarosProgress < 0) sarosProgress = 100 + sarosProgress;
       dashboardSaros.innerHTML = sarosProgress.toFixed(2) + '%';
+      
+      // 计算并显示月相状态
+      updateMoonPhaseDisplay();
       
       // 更新画中画状态
       updatePipStatus();
@@ -963,25 +983,253 @@
 
     //更新画中画状态
     function updatePipStatus() {
-      // 简单的状态更新逻辑，可以根据实际需求扩展
       if (isPaused) {
         pipStatus.innerHTML = '已暂停';
+        return;
+      }
+      
+      // 使用精确的对齐计算
+      const syzygyData = calculateSyzygyProgress();
+      
+      if (syzygyData.progress > 95) {
+        pipStatus.innerHTML = `${syzygyData.type} (${syzygyData.progress.toFixed(1)}%)`;
+      } else if (syzygyData.progress > 80) {
+        pipStatus.innerHTML = `接近${syzygyData.type} (${syzygyData.progress.toFixed(1)}%)`;
       } else {
-        // 检查是否处于日食或月食状态
-        const earthAngle = earthOrbit.rotation.y;
-        const moonAngle = moonOrbit.rotation.y;
-        const angleDiff = Math.abs(earthAngle - moonAngle) % (2 * Math.PI);
-        
-        if (angleDiff < 0.1 || angleDiff > 6.18) {
-          pipStatus.innerHTML = '可能发生日月食';
-        } else {
-          pipStatus.innerHTML = '正常观测中';
-        }
+        pipStatus.innerHTML = `${syzygyData.type} (${syzygyData.progress.toFixed(1)}%)`;
       }
     }
 
     // 一些工具函数
     
+    /**
+     * 计算日地月三天体对齐进度
+     * 修正版：正确计算月球相对于日地连线的角度位置
+     */
+    function calculateSyzygyProgress() {
+      // 获取当前天体角度位置
+      const earthAngle = earthOrbit.rotation.y; // 地球绕太阳的角度
+      const moonOrbitPrecession = moonOrbitGroup.rotation.y; // 月球轨道进动
+      const moonInOrbit = moonOrbit.rotation.y; // 月球在轨道内的角度（恒星坐标系）
+      
+      // 关键修正：月球相对于太阳的角度需要考虑地球的运动
+      // 月球在太阳坐标系中的角度 = 地球角度 + 月球相对地球的角度
+      const moonRelativeToEarth = moonInOrbit + moonOrbitPrecession;
+      const moonAbsoluteAngle = earthAngle + moonRelativeToEarth;
+      
+      // 计算月相角度：从地球看月球相对于太阳的角度
+      // 关键修正：月相角度应该是月球相对地球背向太阳方向的角度
+      // 当moonRelativeToEarth=0时，月球在地球"前方"（面向太阳侧），应该是满月（180°）
+      // 当moonRelativeToEarth=π时，月球在地球"后方"（背离太阳侧），应该是新月（0°）
+      let moonPhaseAngle = (moonRelativeToEarth + Math.PI) % (2 * Math.PI);
+      if (moonPhaseAngle < 0) moonPhaseAngle += 2 * Math.PI;
+      
+      // 将角度标准化到 [0, π] 范围，用于计算对齐度
+      let alignmentAngle = Math.abs(moonPhaseAngle);
+      if (alignmentAngle > Math.PI) {
+        alignmentAngle = 2 * Math.PI - alignmentAngle;
+      }
+      
+      // 计算对齐进度
+      // 新月或满月时对齐度最高(100%)，上弦下弦时最低(0%)
+      let alignmentProgress;
+      if (alignmentAngle <= Math.PI/2) {
+        // 新月方向对齐
+        alignmentProgress = (Math.PI/2 - alignmentAngle) / (Math.PI/2) * 100;
+      } else {
+        // 满月方向对齐
+        alignmentProgress = (alignmentAngle - Math.PI/2) / (Math.PI/2) * 100;
+      }
+      
+      // 判断月相和对齐类型
+      let alignmentType = '';
+      const phaseDegrees = moonPhaseAngle * 180 / Math.PI;
+      
+      // 检查是否接近黄白交点（日月食可能）
+      const isNearNode = Math.abs(Math.sin(moonOrbitPrecession)) < 0.087; // 约5度容差
+      
+      if (phaseDegrees < 15 || phaseDegrees > 345) {
+        alignmentType = isNearNode ? '日食型新月' : '新月';
+      } else if (phaseDegrees > 165 && phaseDegrees < 195) {
+        alignmentType = isNearNode ? '月食型满月' : '满月';
+      } else if (phaseDegrees > 75 && phaseDegrees < 105) {
+        alignmentType = '上弦月';
+      } else if (phaseDegrees > 255 && phaseDegrees < 285) {
+        alignmentType = '下弦月';
+      } else if (phaseDegrees < 90) {
+        alignmentType = '蛾眉月';
+      } else if (phaseDegrees < 180) {
+        alignmentType = '盈凸月';
+      } else if (phaseDegrees < 270) {
+        alignmentType = '亏凸月';
+      } else {
+        alignmentType = '残月';
+      }
+      
+      // 计算下次对齐时间
+      const nextAlignment = calculateNextAlignment(moonPhaseAngle);
+      
+      return {
+        progress: alignmentProgress,
+        type: alignmentType,
+        moonPhase: phaseDegrees,
+        isNearEclipseNode: isNearNode,
+        nextAlignment: nextAlignment,
+        currentDate: dateCurrent.toLocaleString(),
+        earthAngle: earthAngle * 180 / Math.PI,
+        moonAngle: moonAbsoluteAngle * 180 / Math.PI,
+        debugInfo: {
+          moonInOrbit: moonInOrbit * 180 / Math.PI,
+          orbitPrecession: moonOrbitPrecession * 180 / Math.PI,
+          relativeAngle: moonRelativeToEarth * 180 / Math.PI
+        }
+      };
+    }
+    
+    /**
+     * 计算距离下次日地月完美对齐的天数
+     * 修正版：基于正确的月球会合周期
+     */
+    function calculateNextAlignment(currentMoonPhase) {
+      // 朔望月周期（会合周期）
+      const synodicPeriod = 29.530588853; // 天
+      
+      // 当前月相角度（弧度转换为0-2π范围）
+      const phaseRadians = currentMoonPhase;
+      
+      // 计算到下次新月的时间
+      let daysToNewMoon;
+      if (phaseRadians < 0.261799) { // 15度以内
+        daysToNewMoon = (2 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
+      } else {
+        daysToNewMoon = (2 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
+      }
+      
+      // 计算到下次满月的时间
+      let daysToFullMoon;
+      const fullMoonPhase = Math.PI; // 180度
+      let phaseToFull = Math.abs(phaseRadians - fullMoonPhase);
+      if (phaseToFull > Math.PI) {
+        phaseToFull = 2 * Math.PI - phaseToFull;
+      }
+      
+      if (phaseRadians < Math.PI) {
+        daysToFullMoon = (Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
+      } else {
+        daysToFullMoon = (3 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
+      }
+      
+      // 月球轨道交点周期约18.6年
+      const nodePeriod = 18.6 * 365.25; // 天
+      const currentNodePhase = (moonOrbitGroup.rotation.y % (2 * Math.PI));
+      
+      return {
+        daysToNewMoon: Math.abs(daysToNewMoon),
+        daysToFullMoon: Math.abs(daysToFullMoon),
+        synodicPeriod: synodicPeriod,
+        currentPhase: phaseRadians * 180 / Math.PI
+      };
+    }
+    
+    /**
+     * 更新月相状态显示
+     */
+    function updateMoonPhaseDisplay() {
+      const syzygyData = calculateSyzygyProgress();
+      
+      // 更新仪表盘的月相显示
+      dashboardMoonPhase.innerHTML = `${syzygyData.type}`;
+      
+      // 更新仪表盘的对齐程度显示
+      dashboardAlignment.innerHTML = `${syzygyData.progress.toFixed(1)}%`;
+      
+      // 在控制台输出详细信息（调试用）
+      console.log('=== 日地月对齐进度分析（修正版）===');
+      console.log(`当前时间: ${syzygyData.currentDate}`);
+      console.log(`月相: ${syzygyData.type}`);
+      console.log(`月相角度: ${syzygyData.moonPhase.toFixed(2)}°`);
+      console.log(`对齐进度: ${syzygyData.progress.toFixed(2)}%`);
+      console.log(`是否接近交点: ${syzygyData.isNearEclipseNode ? '是' : '否'}`);
+      console.log(`地球轨道角度: ${syzygyData.earthAngle.toFixed(2)}°`);
+      console.log(`月球绝对角度: ${syzygyData.moonAngle.toFixed(2)}°`);
+      console.log(`距下次新月: ${syzygyData.nextAlignment.daysToNewMoon.toFixed(1)}天`);
+      console.log(`距下次满月: ${syzygyData.nextAlignment.daysToFullMoon.toFixed(1)}天`);
+      console.log('调试信息:');
+      console.log(`  月球轨道内角度: ${syzygyData.debugInfo.moonInOrbit.toFixed(2)}°`);
+      console.log(`  轨道进动角度: ${syzygyData.debugInfo.orbitPrecession.toFixed(2)}°`);
+      console.log(`  相对地球角度: ${syzygyData.debugInfo.relativeAngle.toFixed(2)}°`);
+      console.log('================================');
+      
+      return syzygyData;
+    }
+    
+    /**
+     * 更新仪表盘显示对齐进度
+     */
+    function updateAlignmentDisplay() {
+      const syzygyData = calculateSyzygyProgress();
+      
+      // 更新仪表盘显示 - 显示月相而不是对齐进度
+      dashboardSaros.innerHTML = `${syzygyData.type} (${syzygyData.moonPhase.toFixed(1)}°)`;
+      
+      // 在控制台输出详细信息（调试用）
+      console.log('=== 日地月对齐进度分析（修正版）===');
+      console.log(`当前时间: ${syzygyData.currentDate}`);
+      console.log(`月相: ${syzygyData.type}`);
+      console.log(`月相角度: ${syzygyData.moonPhase.toFixed(2)}°`);
+      console.log(`对齐进度: ${syzygyData.progress.toFixed(2)}%`);
+      console.log(`是否接近交点: ${syzygyData.isNearEclipseNode ? '是' : '否'}`);
+      console.log(`地球轨道角度: ${syzygyData.earthAngle.toFixed(2)}°`);
+      console.log(`月球绝对角度: ${syzygyData.moonAngle.toFixed(2)}°`);
+      console.log(`距下次新月: ${syzygyData.nextAlignment.daysToNewMoon.toFixed(1)}天`);
+      console.log(`距下次满月: ${syzygyData.nextAlignment.daysToFullMoon.toFixed(1)}天`);
+      console.log('调试信息:');
+      console.log(`  月球轨道内角度: ${syzygyData.debugInfo.moonInOrbit.toFixed(2)}°`);
+      console.log(`  轨道进动角度: ${syzygyData.debugInfo.orbitPrecession.toFixed(2)}°`);
+      console.log(`  相对地球角度: ${syzygyData.debugInfo.relativeAngle.toFixed(2)}°`);
+      console.log('================================');
+      
+      return syzygyData;
+    }
+    
+    /**
+     * 显示详细的对齐分析结果
+     */
+    function showAlignmentAnalysis() {
+      const syzygyData = updateMoonPhaseDisplay();
+      
+      // 创建详细分析的弹窗或提示
+      const analysisText = `
+=== 日地月系统状态分析（修正版）===
+时间: ${syzygyData.currentDate}
+
+月相信息:
+当前月相: ${syzygyData.type}
+月相角度: ${syzygyData.moonPhase.toFixed(2)}°
+对齐程度: ${syzygyData.progress.toFixed(1)}%
+
+位置信息:
+地球轨道角度: ${syzygyData.earthAngle.toFixed(2)}°
+月球绝对角度: ${syzygyData.moonAngle.toFixed(2)}°
+月球相对地球: ${syzygyData.debugInfo.relativeAngle.toFixed(2)}°
+
+日月食信息:
+接近黄白交点: ${syzygyData.isNearEclipseNode ? '是' : '否'}
+日月食可能性: ${syzygyData.isNearEclipseNode && (syzygyData.progress > 80) ? '高' : '低'}
+
+预测:
+距下次新月: ${syzygyData.nextAlignment.daysToNewMoon.toFixed(1)}天
+距下次满月: ${syzygyData.nextAlignment.daysToFullMoon.toFixed(1)}天
+
+说明:
+- 月相角度: 0°=新月, 90°=上弦, 180°=满月, 270°=下弦
+- 对齐程度反映月球与日地连线的角度关系
+- 日月食只在月球接近黄白交点时可能发生
+      `;
+      
+      alert(analysisText);
+    }
+
     // 窗口大小调整时的处理
     window.addEventListener('resize', function() {
       camera.aspect = window.innerWidth / window.innerHeight;
