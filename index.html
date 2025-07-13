@@ -300,6 +300,50 @@
     </div>
   </aside>
 
+  <!------ 画中画UI框 ------>
+  <div id="pipContainer" style="display: none;">
+    <div id="pipHeader">
+      <div class="pip-title">
+        <i class="fa fa-video-camera"></i>
+        <span>日月食观测</span>
+      </div>
+      <div class="pip-controls">
+        <button class="pip-btn" id="pipMinimize" title="最小化">
+          <i class="fa fa-minus"></i>
+        </button>
+        <button class="pip-btn" id="pipClose" title="关闭">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+    </div>
+    <div id="pipContent">
+      <div id="pipCanvas">
+        <!-- 这里将放置画中画的3D渲染内容 -->
+        <div class="pip-placeholder">
+          <i class="fa fa-eye"></i>
+          <p>地球观测视角</p>
+          <span>当前位置：赤道</span>
+        </div>
+      </div>
+      <div id="pipInfo">
+        <div class="pip-status">
+          <span class="status-label">状态</span>
+          <span class="status-value" id="pipStatus">待机中</span>
+        </div>
+        <div class="pip-location">
+          <span class="location-label">观测点</span>
+          <select id="pipLocationSelect">
+            <option value="90">北极附近</option>
+            <option value="45">北半球</option>
+            <option value="0" selected>赤道</option>
+            <option value="-45">南半球</option>
+            <option value="-90">南极附近</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!------ 小工具条 ------>
   <nav id="toolBar">
     <button class="tool-btn" id="toolPause" title="暂停" onclick="clickOnToolPause()">
@@ -349,8 +393,16 @@
     const dashboardSaros = document.getElementById('db-saros');
     const toolPause = document.getElementById('toolPause');
     const toolSpeed = document.getElementById('toolSpeed');
+    const pipContainer = document.getElementById('pipContainer');
+    const pipMinimize = document.getElementById('pipMinimize');
+    const pipClose = document.getElementById('pipClose');
+    const pipLocationSelect = document.getElementById('pipLocationSelect');
+    const pipStatus = document.getElementById('pipStatus');
+    const PIPSwitch = document.getElementById('PIPSwitch');
     let isControlPanelOpen = false;
     let mouseDragging = false;
+    let isPipMinimized = false;
+    let isPipVisible = false;
 
     // 公共变量：天体和运动参数
     const frameRate = 60; //动画帧数
@@ -615,12 +667,15 @@
     let targetX = 0, targetY = 0;
     const windowHalfX = window.innerWidth / 2;
     const windowHalfY = window.innerHeight / 2;
+    
     document.addEventListener('mousedown', (event) => {
       mouseDragging = true;
-    })
+    });
+    
     document.addEventListener('mouseup', (event) => {
       mouseDragging = false;
-    })
+    });
+    
     document.addEventListener('mousemove', (event) => {
       if(!mouseDragging) return;
       mouseX = (event.clientX - windowHalfX) * 0.005;
@@ -704,6 +759,18 @@
     reserveSwitch.addEventListener('change', changeReserveSwitch);
     axisSwitch.addEventListener('change', changeAxisVisibility);
     moonNormalSwitch.addEventListener('change', changeMoonNormalVisibility);
+    pipMinimize.addEventListener('click', togglePipMinimize);
+    pipClose.addEventListener('click', togglePipVisibility);
+    pipLocationSelect.addEventListener('change', changePipLocation);
+    PIPSwitch.addEventListener('change', function() {
+      if (PIPSwitch.checked) {
+        pipContainer.style.display = 'block';
+        isPipVisible = true;
+      } else {
+        pipContainer.style.display = 'none';
+        isPipVisible = false;
+      }
+    });
 
     //控制面板开关
     function switchControlPanel(){
@@ -860,9 +927,67 @@
       var sarosProgress = ((days % sarosCurrent) / sarosCurrent * 100);
       if(sarosProgress < 0) sarosProgress = 100 + sarosProgress;
       dashboardSaros.innerHTML = sarosProgress.toFixed(2) + '%';
+      
+      // 更新画中画状态
+      updatePipStatus();
+    }
+
+    //画中画最小化切换
+    function togglePipMinimize() {
+      isPipMinimized = !isPipMinimized;
+      if (isPipMinimized) {
+        pipContainer.classList.add('minimized');
+        pipMinimize.innerHTML = '<i class="fa fa-plus"></i>';
+        pipMinimize.title = '展开';
+      } else {
+        pipContainer.classList.remove('minimized');
+        pipMinimize.innerHTML = '<i class="fa fa-minus"></i>';
+        pipMinimize.title = '最小化';
+      }
+    }
+
+    //画中画显示/隐藏切换
+    function togglePipVisibility() {
+      isPipVisible = !isPipVisible;
+      pipContainer.style.display = isPipVisible ? 'block' : 'none';
+      // 同步更新控制面板中的开关状态
+      PIPSwitch.checked = isPipVisible;
+    }
+
+    //改变画中画观测位置
+    function changePipLocation() {
+      const latitude = pipLocationSelect.value;
+      // 这里可以根据纬度更新画中画显示内容
+      updatePipStatus();
+    }
+
+    //更新画中画状态
+    function updatePipStatus() {
+      // 简单的状态更新逻辑，可以根据实际需求扩展
+      if (isPaused) {
+        pipStatus.innerHTML = '已暂停';
+      } else {
+        // 检查是否处于日食或月食状态
+        const earthAngle = earthOrbit.rotation.y;
+        const moonAngle = moonOrbit.rotation.y;
+        const angleDiff = Math.abs(earthAngle - moonAngle) % (2 * Math.PI);
+        
+        if (angleDiff < 0.1 || angleDiff > 6.18) {
+          pipStatus.innerHTML = '可能发生日月食';
+        } else {
+          pipStatus.innerHTML = '正常观测中';
+        }
+      }
     }
 
     // 一些工具函数
+    
+    // 窗口大小调整时的处理
+    window.addEventListener('resize', function() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   </script>
 </body>
 </html>
