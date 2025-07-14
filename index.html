@@ -640,7 +640,7 @@
 
         // 调整灵敏度
         targetAzimuth = startAzimuth - dx * 0.005;
-        targetElevation = startElevation - dy * 0.005;
+        targetElevation = startElevation + dy * 0.005;
 
         // 限制 elevation（仰角）范围
         const maxElevation = Math.PI / 2 - 0.01;
