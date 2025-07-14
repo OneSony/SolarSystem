@@ -368,7 +368,14 @@
     let speedFactor = 1;      //速度因子
     let isPaused = false;     //暂停
     let isbackwards = false;  //倒退
-
+    //视角相关参数
+    let isViewLocked = false; //是否是3D视角
+    let targetAzimuth = 0;     // 水平角
+    let targetElevation = 0;   // 垂直角
+    let startMouseX = 0;
+    let startMouseY = 0;
+    let startAzimuth = 0;
+    let startElevation = 0;
     // 公共变量：场景、相机、渲染器、纹理
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -616,15 +623,29 @@
     const windowHalfX = window.innerWidth / 2;
     const windowHalfY = window.innerHeight / 2;
     document.addEventListener('mousedown', (event) => {
-      mouseDragging = true;
+        mouseDragging = true;
+        startMouseX = event.clientX;
+        startMouseY = event.clientY;
+        startAzimuth = targetAzimuth;
+        startElevation = targetElevation;
     })
     document.addEventListener('mouseup', (event) => {
       mouseDragging = false;
     })
     document.addEventListener('mousemove', (event) => {
-      if(!mouseDragging) return;
-      mouseX = (event.clientX - windowHalfX) * 0.005;
-      mouseY = (event.clientY - windowHalfY) * 0.005;
+        if (!mouseDragging || isViewLocked) return;
+
+        const dx = event.clientX - startMouseX;
+        const dy = event.clientY - startMouseY;
+
+        // 调整灵敏度
+        targetAzimuth = startAzimuth + dx * 0.005;
+        targetElevation = startElevation + dy * 0.005;
+
+        // 限制 elevation（仰角）范围
+        const maxElevation = Math.PI / 2 - 0.01;
+        const minElevation = -Math.PI / 2 + 0.01;
+        targetElevation = Math.max(minElevation, Math.min(maxElevation, targetElevation));
     });
 
     /* * * * * * * * * *
@@ -638,14 +659,19 @@
         if(isbackwards) dayDelta = -dayDelta;
         stepSimulation(dayDelta);
       }
-      // 相机控制
-      targetX += (mouseX - targetX) * 0.05;
-      targetY += (mouseY - targetY) * 0.05;
-      camera.position.x = Math.sin(targetX) * 10;
-      camera.position.y = targetY * 10;
-      camera.position.z = Math.cos(targetX) * 10;
-      camera.lookAt(scene.position);
-    
+        // 相机控制
+        if (!isViewLocked) {
+            const r = 10; // 相机半径
+
+            const x = r * Math.cos(targetElevation) * Math.sin(targetAzimuth);
+            const y = r * Math.sin(targetElevation);
+            const z = r * Math.cos(targetElevation) * Math.cos(targetAzimuth);
+
+            camera.position.set(x, y, z);
+            camera.up.set(0, 1, 0);
+            camera.lookAt(scene.position);
+        }
+
       if(!rendererLock)  renderer.render(scene, camera);
     }
     
@@ -862,7 +888,41 @@
       dashboardSaros.innerHTML = sarosProgress.toFixed(2) + '%';
     }
 
-    // 一些工具函数
+      // 视角切换相关变量与函数
+
+      const topViewRadio = document.getElementById('top-view');
+      const sideViewRadio = document.getElementById('side-view');
+      const view3DRadio = document.getElementById('3D-view');
+
+      function switchToTopView() {
+          isViewLocked = true;
+          camera.position.set(0, 20, 0);
+          camera.up.set(0, 0, -1);
+          camera.lookAt(scene.position);
+      }
+
+      function switchToSideView() {
+          isViewLocked = true;
+          camera.position.set(20, 0, 0);
+          camera.up.set(0, 1, 0);
+          camera.lookAt(scene.position);
+      }
+
+      function switchTo3DView() {
+          isViewLocked = false;
+      }
+
+      // 绑定按钮事件
+      topViewRadio.addEventListener('change', () => {
+          if (topViewRadio.checked) switchToTopView();
+      });
+      sideViewRadio.addEventListener('change', () => {
+          if (sideViewRadio.checked) switchToSideView();
+      });
+      view3DRadio.addEventListener('change', () => {
+          if (view3DRadio.checked) switchTo3DView();
+      });
+
   </script>
 </body>
 </html>
