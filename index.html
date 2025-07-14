@@ -331,11 +331,13 @@
     </div>
     <div id="pipContent">
       <div id="pipCanvas">
-        <!-- 这里将放置画中画的3D渲染内容 -->
-        <div class="pip-placeholder">
-          <i class="fa fa-eye"></i>
-          <p>地球观测视角</p>
-          <span>当前位置：赤道</span>
+        <!-- 3D月相渲染容器 -->
+        <div id="moonPhase3D"></div>
+        <div class="pip-overlay">
+          <div class="pip-info-text">
+            <span id="pipLocationText">赤道观测</span>
+            <span id="pipMoonPhaseText">新月</span>
+          </div>
         </div>
       </div>
       <div id="pipInfo">
@@ -414,6 +416,20 @@
     const pipLocationSelect = document.getElementById('pipLocationSelect');
     const pipStatus = document.getElementById('pipStatus');
     const PIPSwitch = document.getElementById('PIPSwitch');
+    const pipLocationText = document.getElementById('pipLocationText');
+    const pipMoonPhaseText = document.getElementById('pipMoonPhaseText');
+    
+    // 3D月相相关变量
+    let pipScene = null;
+    let pipCamera = null;
+    let pipRenderer = null;
+    let pip3DMoon = null;
+    let pipSunLight = null;
+    let pipAmbientLight = null;
+    let lastPhaseAngle = 0;
+    let lastIllumination = 0;
+    let phaseTransitionSpeed = 0.02; // 降低过渡速度，使变化更平滑
+    let lastSunLightPosition = { x: 5, y: 0, z: 0 }; // 记录上次光源位置
     let isControlPanelOpen = false;
     let mouseDragging = false;
     let isPipMinimized = false;
@@ -708,6 +724,7 @@
         if(isbackwards) dayDelta = -dayDelta;
         stepSimulation(dayDelta);
       }
+      
       // 相机控制
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;
@@ -720,6 +737,349 @@
     }
     
     animate();
+
+    /* * * * * * * * * *
+     * 3D月相渲染功能
+     * * * * * * * * * */
+    
+    /**
+     * 初始化3D月相场景
+     */
+    function init3DMoonPhase() {
+      const container = document.getElementById('moonPhase3D');
+      if (!container) {
+        console.warn('3D月相容器未找到');
+        return false;
+      }
+      
+      try {
+        // 创建场景
+        pipScene = new THREE.Scene();
+        pipScene.background = new THREE.Color(0x0d0f13);
+        
+        // 创建相机
+        const containerRect = container.getBoundingClientRect();
+        pipCamera = new THREE.PerspectiveCamera(
+          50,
+          containerRect.width / containerRect.height,
+          0.1,
+          100
+        );
+        pipCamera.position.set(0, 0, 3); // 地球视角：从Z轴正方向看月球
+        pipCamera.lookAt(0, 0, 0); // 朝向月球中心
+        
+        // 创建渲染器
+        pipRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        pipRenderer.setSize(containerRect.width, containerRect.height);
+        pipRenderer.shadowMap.enabled = true;
+        pipRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        pipRenderer.outputEncoding = THREE.sRGBEncoding;
+        pipRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        pipRenderer.toneMappingExposure = 1.2;
+        
+        container.appendChild(pipRenderer.domElement);
+        
+        // 创建3D月球
+        create3DMoon();
+        
+        // 创建光照
+        create3DLighting();
+        
+        // 设置深色背景（不使用星空）
+        pipRenderer.setClearColor(0x0a0a0a, 1.0); // 深灰色背景
+        
+        // 开始渲染循环
+        start3DMoonAnimation();
+        
+        // 直接使用同步方式初始化月相显示
+        const syzygyData = calculateSyzygyProgress();
+        updatePipMoonPhase(syzygyData);
+        
+        console.log('3D月相场景初始化成功');
+        return true;
+      } catch (error) {
+        console.error('3D月相场景初始化失败:', error);
+        return false;
+      }
+    }
+    
+    /**
+     * 创建3D月球
+     */
+    function create3DMoon() {
+      // 月球几何体
+      const moonGeometry = new THREE.SphereGeometry(1, 64, 64);
+      
+      // 月球材质
+      const moonMaterial = new THREE.MeshPhongMaterial({
+        color: 0xcccccc,
+        shininess: 5,
+        transparent: false
+      });
+      
+      // 如果有月球纹理，使用纹理
+      if (typeof moonTexture !== 'undefined') {
+        moonMaterial.map = moonTexture;
+      }
+      
+      // 创建月球mesh
+      pip3DMoon = new THREE.Mesh(moonGeometry, moonMaterial);
+      pip3DMoon.castShadow = true;
+      pip3DMoon.receiveShadow = true;
+      
+      // 潮汐锁定：月球始终以同一面朝向地球（观察者）
+      // 设置初始朝向，确保月球表面特征始终面向观察者
+      pip3DMoon.rotation.y = 0;
+      pip3DMoon.rotation.x = 0;
+      pip3DMoon.rotation.z = 0;
+      
+      // 添加法线贴图效果（模拟月球表面凹凸）
+      const bumpTexture = createMoonBumpTexture();
+      moonMaterial.bumpMap = bumpTexture;
+      moonMaterial.bumpScale = 0.1;
+      
+      pipScene.add(pip3DMoon);
+    }
+    
+    /**
+     * 创建月球凹凸纹理
+     */
+    function createMoonBumpTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // 创建噪声纹理模拟月球表面
+      const imageData = ctx.createImageData(512, 512);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const x = (i / 4) % 512;
+        const y = Math.floor((i / 4) / 512);
+        
+        // 使用多层噪声创建月球表面效果
+        let noise = 0;
+        noise += Math.sin(x * 0.02) * Math.cos(y * 0.02) * 0.3;
+        noise += Math.sin(x * 0.05) * Math.cos(y * 0.05) * 0.2;
+        noise += Math.random() * 0.1;
+        
+        // 添加一些"环形山"
+        const craters = [
+          {x: 128, y: 128, radius: 30},
+          {x: 300, y: 200, radius: 20},
+          {x: 400, y: 350, radius: 25},
+          {x: 150, y: 400, radius: 15}
+        ];
+        
+        craters.forEach(crater => {
+          const dist = Math.sqrt((x - crater.x) ** 2 + (y - crater.y) ** 2);
+          if (dist < crater.radius) {
+            noise -= (1 - dist / crater.radius) * 0.3;
+          }
+        });
+        
+        const value = Math.max(0, Math.min(255, (noise + 0.5) * 255));
+        data[i] = value;     // R
+        data[i + 1] = value; // G
+        data[i + 2] = value; // B
+        data[i + 3] = 255;   // A
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      return texture;
+    }
+    
+    /**
+     * 创建3D光照系统
+     */
+    function create3DLighting() {
+      // 主光源（太阳光）
+      pipSunLight = new THREE.DirectionalLight(0xffffff, 2.5);
+      pipSunLight.position.set(5, 0, 0);
+      pipSunLight.castShadow = true;
+      pipSunLight.shadow.mapSize.width = 1024;
+      pipSunLight.shadow.mapSize.height = 1024;
+      pipSunLight.shadow.camera.near = 0.1;
+      pipSunLight.shadow.camera.far = 10;
+      pipSunLight.shadow.camera.left = -2;
+      pipSunLight.shadow.camera.right = 2;
+      pipSunLight.shadow.camera.top = 2;
+      pipSunLight.shadow.camera.bottom = -2;
+      pipScene.add(pipSunLight);
+      
+      // 环境光（微弱，模拟宇宙中的散射光）
+      pipAmbientLight = new THREE.AmbientLight(0x404060, 0.1);
+      pipScene.add(pipAmbientLight);
+      
+      // 添加一些点光源模拟地球反射光
+      const earthLight = new THREE.PointLight(0x6699ff, 0.2, 10);
+      earthLight.position.set(-3, 1, 2);
+      pipScene.add(earthLight);
+    }
+    
+    /**
+     * 同步更新3D月相光照（直接匹配对齐程度，无过渡动画）
+     */
+    function update3DMoonPhaseSync(moonRelativeAngle, illumination) {
+      if (!pipSunLight || !pip3DMoon) return;
+      
+      // 直接使用月球相对地球的角度，移除π/2修正
+      const sunAngleFor3D = moonRelativeAngle;
+      
+      const sunDistance = 8;
+      const targetSunX = Math.sin(sunAngleFor3D) * sunDistance;
+      const targetSunY = 0; // 保持在赤道平面
+      const targetSunZ = Math.cos(sunAngleFor3D) * sunDistance;
+      
+      // 直接设置光源位置，不使用过渡动画
+      pipSunLight.position.set(targetSunX, targetSunY, targetSunZ);
+      pipSunLight.lookAt(0, 0, 0);
+      
+      // 直接设置光照强度
+      const targetIntensity = 1.5 + illumination * 1.5;
+      pipSunLight.intensity = targetIntensity;
+      
+      // 直接设置环境光
+      const targetAmbient = 0.05 + illumination * 0.15;
+      pipAmbientLight.intensity = targetAmbient;
+      
+      // 月球潮汐锁定 - 完全静止，不自转
+      pip3DMoon.rotation.set(0, 0, 0);
+      
+      // 根据观测纬度调整相机Y位置（仰角）
+      const latitude = parseFloat(pipLocationSelect.value) || 0;
+      const latitudeOffset = Math.sin(latitude * Math.PI / 180) * 0.5;
+      pipCamera.position.y = latitudeOffset;
+      pipCamera.lookAt(0, 0, 0);
+    }
+
+    /**
+     * 更新3D月相光照（根据太阳位置）- 保留用于初始化
+     */
+    function update3DMoonPhase(phaseAngle, illumination) {
+      if (!pipSunLight || !pip3DMoon) return;
+      
+      // 根据原始月相角度计算逻辑：
+      // phaseAngle来自 (moonRelativeToEarth + Math.PI) 的计算
+      // 需要反推回moonRelativeToEarth来确定正确的光照方向
+      
+      // 反推月球相对地球的实际角度
+      const moonRelativeAngle = phaseAngle - Math.PI;
+      
+      // 直接使用月球相对地球的角度，移除π/2修正
+      const sunAngleFor3D = moonRelativeAngle;
+      
+      // 地球视角：相机在Z+方向，光源在XZ平面内旋转
+      // 当moonRelativeAngle=0时（满月），光源从Z+方向照射
+      // 当moonRelativeAngle=π时（新月），光源从Z-方向照射
+      const sunDistance = 8;
+      const targetSunX = Math.sin(sunAngleFor3D) * sunDistance;  // X轴变化
+      const targetSunY = 0; // 保持在赤道平面
+      const targetSunZ = Math.cos(sunAngleFor3D) * sunDistance;  // Z轴变化，主要方向
+      
+      // 平滑过渡光源位置，避免瞬时变化 - 根据倍速调整
+      const baseLightSpeed = 0.04;
+      const lightTransitionSpeed = Math.min(0.5, baseLightSpeed * Math.sqrt(speedFactor));
+      
+      // 简化的平滑过渡，避免复杂的边界处理
+      lastSunLightPosition.x += (targetSunX - lastSunLightPosition.x) * lightTransitionSpeed;
+      lastSunLightPosition.y += (targetSunY - lastSunLightPosition.y) * lightTransitionSpeed;
+      lastSunLightPosition.z += (targetSunZ - lastSunLightPosition.z) * lightTransitionSpeed;
+      
+      // 更新光源位置
+      pipSunLight.position.set(lastSunLightPosition.x, lastSunLightPosition.y, lastSunLightPosition.z);
+      pipSunLight.lookAt(0, 0, 0);
+      
+      // 根据照明程度调整光照强度
+      const targetIntensity = 1.5 + illumination * 1.5;
+      pipSunLight.intensity += (targetIntensity - pipSunLight.intensity) * 0.1;
+      
+      // 调整环境光
+      const targetAmbient = 0.05 + illumination * 0.15;
+      pipAmbientLight.intensity += (targetAmbient - pipAmbientLight.intensity) * 0.1;
+      
+      // 月球潮汐锁定 - 完全静止，不自转
+      // 月球始终以同一面朝向观察者（地球）
+      pip3DMoon.rotation.set(0, 0, 0);
+      
+      // 根据观测纬度调整相机Y位置（仰角）
+      const latitude = parseFloat(pipLocationSelect.value) || 0;
+      const latitudeOffset = Math.sin(latitude * Math.PI / 180) * 0.5;
+      const targetCameraY = latitudeOffset;
+      pipCamera.position.y += (targetCameraY - pipCamera.position.y) * 0.1;
+      pipCamera.lookAt(0, 0, 0);
+    }
+    
+    /**
+     * 3D月相动画循环
+     */
+    function start3DMoonAnimation() {
+      function animate3DMoon() {
+        if (!pipRenderer || !pipScene || !pipCamera) return;
+        
+        requestAnimationFrame(animate3DMoon);
+        
+        // 只在画中画可见时渲染
+        if (isPipVisible) {
+          pipRenderer.render(pipScene, pipCamera);
+        }
+      }
+      
+      animate3DMoon();
+    }
+    
+    /**
+     * 调整3D月相渲染器大小
+     */
+    function resize3DMoonPhase() {
+      if (!pipRenderer || !pipCamera) return;
+      
+      const container = document.getElementById('moonPhase3D');
+      if (!container) return;
+      
+      const containerRect = container.getBoundingClientRect();
+      if (containerRect.width === 0 || containerRect.height === 0) return;
+      
+      pipCamera.aspect = containerRect.width / containerRect.height;
+      pipCamera.updateProjectionMatrix();
+      pipRenderer.setSize(containerRect.width, containerRect.height);
+    }
+    
+    /**
+     * 清理3D月相资源
+     */
+    function cleanup3DMoonPhase() {
+      if (pipRenderer) {
+        const container = document.getElementById('moonPhase3D');
+        if (container && pipRenderer.domElement.parentNode === container) {
+          container.removeChild(pipRenderer.domElement);
+        }
+        pipRenderer.dispose();
+        pipRenderer = null;
+      }
+      
+      if (pipScene) {
+        pipScene.clear();
+        pipScene = null;
+      }
+      
+      pipCamera = null;
+      pip3DMoon = null;
+      pipSunLight = null;
+      pipAmbientLight = null;
+    }
+    
+    // 初始化3D月相场景（延迟执行，确保DOM加载完成）
+    setTimeout(() => {
+      if (document.getElementById('moonPhase3D') && pipContainer.style.display !== 'none') {
+        init3DMoonPhase();
+      }
+    }, 500);
 
     function  stepSimulation(dayDelta, totalDaysFlag = false) {
       if(!totalDaysFlag){
@@ -746,6 +1106,9 @@
           moonOrbit.rotation.y = days * moonRevolveAnglePerDay;
           moonOrbitGroup.rotation.y = days * moonOrbitPrecessionPerDay;
       }
+      
+      // 更新月相显示（只在时间变化时更新）
+      updateMoonPhaseDisplayOptimized();
     }
 
     /* * * * * * * * * * * *
@@ -777,13 +1140,42 @@
     pipMinimize.addEventListener('click', togglePipMinimize);
     pipClose.addEventListener('click', togglePipVisibility);
     pipLocationSelect.addEventListener('change', changePipLocation);
+    
+    // 主控制面板位置选择器同步
+    const mainLocationSelect = document.getElementById('latitudePos');
+    if (mainLocationSelect) {
+      mainLocationSelect.addEventListener('change', function() {
+        if (isPipVisible) {
+          pipLocationSelect.value = mainLocationSelect.value;
+          updateMoonPhaseDisplay();
+        }
+      });
+    }
     PIPSwitch.addEventListener('change', function() {
       if (PIPSwitch.checked) {
         pipContainer.style.display = 'block';
         isPipVisible = true;
+        // 异步初始化3D场景
+        setTimeout(() => {
+          if (init3DMoonPhase()) {
+            // 直接更新月相显示，不需要初始化过渡参数
+            updateMoonPhaseDisplay();
+          } else {
+            // 如果初始化失败，再尝试一次
+            setTimeout(() => {
+              if (init3DMoonPhase()) {
+                updateMoonPhaseDisplay();
+              } else {
+                console.warn('3D月相场景初始化失败，请检查DOM结构');
+              }
+            }, 500);
+          }
+        }, 100);
       } else {
         pipContainer.style.display = 'none';
         isPipVisible = false;
+        // 清理3D资源
+        cleanup3DMoonPhase();
       }
     });
 
@@ -977,8 +1369,14 @@
     //改变画中画观测位置
     function changePipLocation() {
       const latitude = pipLocationSelect.value;
-      // 这里可以根据纬度更新画中画显示内容
-      updatePipStatus();
+      // 同步更新控制面板中的位置选择器
+      const mainLocationSelect = document.getElementById('latitudePos');
+      if (mainLocationSelect) {
+        mainLocationSelect.value = latitude;
+      }
+      
+      // 更新画中画显示的位置信息
+      updateMoonPhaseDisplay();
     }
 
     //更新画中画状态
@@ -1132,9 +1530,9 @@
     }
     
     /**
-     * 更新月相状态显示
+     * 更新月相状态显示（优化版本）
      */
-    function updateMoonPhaseDisplay() {
+    function updateMoonPhaseDisplayOptimized() {
       const syzygyData = calculateSyzygyProgress();
       
       // 更新仪表盘的月相显示
@@ -1143,24 +1541,94 @@
       // 更新仪表盘的对齐程度显示
       dashboardAlignment.innerHTML = `${syzygyData.progress.toFixed(1)}%`;
       
-      // 在控制台输出详细信息（调试用）
-      console.log('=== 日地月对齐进度分析（修正版）===');
-      console.log(`当前时间: ${syzygyData.currentDate}`);
-      console.log(`月相: ${syzygyData.type}`);
-      console.log(`月相角度: ${syzygyData.moonPhase.toFixed(2)}°`);
-      console.log(`对齐进度: ${syzygyData.progress.toFixed(2)}%`);
-      console.log(`是否接近交点: ${syzygyData.isNearEclipseNode ? '是' : '否'}`);
-      console.log(`地球轨道角度: ${syzygyData.earthAngle.toFixed(2)}°`);
-      console.log(`月球绝对角度: ${syzygyData.moonAngle.toFixed(2)}°`);
-      console.log(`距下次新月: ${syzygyData.nextAlignment.daysToNewMoon.toFixed(1)}天`);
-      console.log(`距下次满月: ${syzygyData.nextAlignment.daysToFullMoon.toFixed(1)}天`);
-      console.log('调试信息:');
-      console.log(`  月球轨道内角度: ${syzygyData.debugInfo.moonInOrbit.toFixed(2)}°`);
-      console.log(`  轨道进动角度: ${syzygyData.debugInfo.orbitPrecession.toFixed(2)}°`);
-      console.log(`  相对地球角度: ${syzygyData.debugInfo.relativeAngle.toFixed(2)}°`);
-      console.log('================================');
+      // 只在画中画可见时更新月相绘制
+      if (isPipVisible && pipRenderer) {
+        updatePipMoonPhase(syzygyData);
+      }
       
       return syzygyData;
+    }
+    
+    /**
+     * 更新画中画月相绘制（3D版本）- 直接同步对齐程度
+     */
+    function updatePipMoonPhase(syzygyData) {
+      // 直接使用计算好的月球相对地球角度，确保与对齐程度完全同步
+      const moonRelativeAngle = syzygyData.debugInfo.relativeAngle * Math.PI / 180; // 转换为弧度
+      const phaseAngle = syzygyData.moonPhase * Math.PI / 180; // 月相角度
+      const illumination = calculateIllumination(phaseAngle);
+      
+      // 直接更新3D月相，不使用平滑过渡以确保完全同步
+      update3DMoonPhaseSync(moonRelativeAngle, illumination);
+      
+      // 更新文字信息
+      if (pipMoonPhaseText) {
+        pipMoonPhaseText.textContent = syzygyData.type;
+      }
+      
+      // 更新观测位置信息
+      if (pipLocationText) {
+        const location = getLocationName(pipLocationSelect.value);
+        pipLocationText.textContent = location + '观测';
+      }
+    }
+    
+    /**
+     * 更新月相状态显示（保留原函数用于手动调用）
+     */
+    function updateMoonPhaseDisplay() {
+      return updateMoonPhaseDisplayOptimized();
+    }
+    
+    /**
+     * 根据月相角度计算照明程度（改进版 - 更自然的过渡）
+     */
+    function calculateIllumination(phaseAngle) {
+      // 将角度标准化到 [0, 2π]
+      let normalizedAngle = phaseAngle % (2 * Math.PI);
+      if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+      
+      // 基础照明计算
+      let baseIllumination = (1 - Math.cos(normalizedAngle)) / 2;
+      
+      // 应用平滑曲线，使过渡更自然
+      // 使用 smoothstep 函数创建更平滑的过渡
+      let smoothIllumination = smoothStep(0, 1, baseIllumination);
+      
+      // 在新月和满月附近增加一些非线性效果
+      const newMoonFactor = Math.exp(-Math.pow(normalizedAngle / Math.PI, 2) * 3);
+      const fullMoonFactor = Math.exp(-Math.pow((normalizedAngle - Math.PI) / Math.PI, 2) * 3);
+      
+      // 新月时减少亮度，满月时增加亮度
+      if (normalizedAngle < Math.PI / 2 || normalizedAngle > 3 * Math.PI / 2) {
+        smoothIllumination *= (1 - newMoonFactor * 0.3);
+      } else if (normalizedAngle > Math.PI / 2 && normalizedAngle < 3 * Math.PI / 2) {
+        smoothIllumination = Math.min(1, smoothIllumination * (1 + fullMoonFactor * 0.2));
+      }
+      
+      return Math.max(0, Math.min(1, smoothIllumination));
+    }
+    
+    /**
+     * 平滑插值函数 - 创建更自然的过渡曲线
+     */
+    function smoothStep(edge0, edge1, x) {
+      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+      return t * t * (3 - 2 * t);
+    }
+    
+    /**
+     * 获取观测位置名称
+     */
+    function getLocationName(value) {
+      const locations = {
+        '90': '北极',
+        '45': '北半球',
+        '0': '赤道',
+        '-45': '南半球',
+        '-90': '南极'
+      };
+      return locations[value] || '未知';
     }
     
     /**
@@ -1235,6 +1703,13 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      // 重新调整3D月相渲染器
+      if (pipRenderer && isPipVisible) {
+        setTimeout(() => {
+          resize3DMoonPhase();
+        }, 100);
+      }
     });
   </script>
 </body>

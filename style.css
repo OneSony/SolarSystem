@@ -886,6 +886,48 @@ ul {
   margin-bottom: 12px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#moonPhase3D {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#moonPhase3D canvas {
+  border-radius: 8px;
+  display: block;
+}
+
+.pip-overlay {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 6px;
+  padding: 4px 8px;
+  backdrop-filter: blur(4px);
+}
+
+.pip-info-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.pip-info-text span:first-child {
+  color: #888;
+}
+
+.pip-info-text span:last-child {
+  color: #c9a35c;
+  font-weight: 500;
 }
 
 .pip-placeholder {
