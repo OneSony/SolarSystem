@@ -755,7 +755,7 @@
       try {
         // 创建场景
         pipScene = new THREE.Scene();
-        pipScene.background = new THREE.Color(0x0d0f13);
+        // 背景颜色将通过 renderer.setClearColor 动态设置
         
         // 创建相机
         const containerRect = container.getBoundingClientRect();
@@ -769,7 +769,7 @@
         pipCamera.lookAt(0, 0, 0); // 朝向月球中心
         
         // 创建渲染器
-        pipRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        pipRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         pipRenderer.setSize(containerRect.width, containerRect.height);
         pipRenderer.shadowMap.enabled = true;
         pipRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -785,8 +785,7 @@
         // 创建光照
         create3DLighting();
         
-        // 设置深色背景（不使用星空）
-        pipRenderer.setClearColor(0x0a0a0a, 1.0); // 深灰色背景
+        // 背景颜色将根据月相动态设置，不在此处固定
         
         // 开始渲染循环
         start3DMoonAnimation();
@@ -923,10 +922,125 @@
     }
     
     /**
+     * 根据月相计算最佳观测时间的天空颜色 - 自然淡雅的天空渐变
+     */
+    function calculateSkyColor(moonRelativeAngle) {
+      // 将角度标准化到 [0, 2π] 范围
+      let normalizedAngle = ((moonRelativeAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      
+      // 更自然、更淡雅的天空颜色
+      const colors = {
+        newMoon: { r: 18, g: 32, b: 47 },        // 新月：深蓝夜空
+        firstQuarter: { r: 60, g: 50, b: 80 },   // 上弦月：淡紫黎明
+        fullMoon: { r: 135, g: 206, b: 235 },   // 满月：经典天蓝色（白天）
+        lastQuarter: { r: 255, g: 165, b: 79 }  // 下弦月：自然橙色晚霞
+      };
+      
+      // 添加中间过渡色，让夜晚时间更长
+      let targetColor;
+      
+      if (normalizedAngle < Math.PI / 6) {
+        // 新月区域：深夜蓝（扩大夜晚范围）
+        targetColor = colors.newMoon;
+      } else if (normalizedAngle < Math.PI / 3) {
+        // 深夜到黎明前
+        const t = (normalizedAngle - Math.PI / 6) / (Math.PI / 6);
+        const smoothT = t * t * (3 - 2 * t); // smoothstep
+        targetColor = {
+          r: Math.round(colors.newMoon.r + (colors.firstQuarter.r - colors.newMoon.r) * smoothT),
+          g: Math.round(colors.newMoon.g + (colors.firstQuarter.g - colors.newMoon.g) * smoothT),
+          b: Math.round(colors.newMoon.b + (colors.firstQuarter.b - colors.newMoon.b) * smoothT)
+        };
+      } else if (normalizedAngle < Math.PI / 2) {
+        // 黎明到朝霞
+        const t = (normalizedAngle - Math.PI / 3) / (Math.PI / 6);
+        const smoothT = 0.5 * (1 + Math.sin(Math.PI * (t - 0.5))); // 正弦缓动
+        // 过渡到淡朝霞色
+        const dawnColor = { r: 173, g: 216, b: 230 }; // 淡蓝朝霞
+        targetColor = {
+          r: Math.round(colors.firstQuarter.r + (dawnColor.r - colors.firstQuarter.r) * smoothT),
+          g: Math.round(colors.firstQuarter.g + (dawnColor.g - colors.firstQuarter.g) * smoothT),
+          b: Math.round(colors.firstQuarter.b + (dawnColor.b - colors.firstQuarter.b) * smoothT)
+        };
+      } else if (normalizedAngle < 2 * Math.PI / 3) {
+        // 朝霞到白天
+        const t = (normalizedAngle - Math.PI / 2) / (Math.PI / 6);
+        const smoothT = t * t * (3 - 2 * t);
+        const dawnColor = { r: 173, g: 216, b: 230 };
+        targetColor = {
+          r: Math.round(dawnColor.r + (colors.fullMoon.r - dawnColor.r) * smoothT),
+          g: Math.round(dawnColor.g + (colors.fullMoon.g - dawnColor.g) * smoothT),
+          b: Math.round(dawnColor.b + (colors.fullMoon.b - dawnColor.b) * smoothT)
+        };
+      } else if (normalizedAngle < 4 * Math.PI / 3) {
+        // 满月区域：明亮天蓝色（白天时间）
+        targetColor = colors.fullMoon;
+      } else if (normalizedAngle < 3 * Math.PI / 2) {
+        // 白天到黄昏
+        const t = (normalizedAngle - 4 * Math.PI / 3) / (Math.PI / 6);
+        const smoothT = 0.5 * (1 + Math.sin(Math.PI * (t - 0.5)));
+        // 过渡到温暖的黄昏橙色
+        const goldenColor = { r: 255, g: 193, b: 128 }; // 温暖橙色
+        targetColor = {
+          r: Math.round(colors.fullMoon.r + (goldenColor.r - colors.fullMoon.r) * smoothT),
+          g: Math.round(colors.fullMoon.g + (goldenColor.g - colors.fullMoon.g) * smoothT),
+          b: Math.round(colors.fullMoon.b + (goldenColor.b - colors.fullMoon.b) * smoothT)
+        };
+      } else if (normalizedAngle < 5 * Math.PI / 3) {
+        // 黄昏到日落
+        const t = (normalizedAngle - 3 * Math.PI / 2) / (Math.PI / 6);
+        const smoothT = t * t * (3 - 2 * t);
+        const goldenColor = { r: 255, g: 193, b: 128 };
+        targetColor = {
+          r: Math.round(goldenColor.r + (colors.lastQuarter.r - goldenColor.r) * smoothT),
+          g: Math.round(goldenColor.g + (colors.lastQuarter.g - goldenColor.g) * smoothT),
+          b: Math.round(goldenColor.b + (colors.lastQuarter.b - goldenColor.b) * smoothT)
+        };
+      } else {
+        // 日落到深夜（更长的夜晚过渡）
+        const t = (normalizedAngle - 5 * Math.PI / 3) / (Math.PI / 3);
+        const smoothT = 0.5 * (1 + Math.sin(Math.PI * (t - 0.5)));
+        targetColor = {
+          r: Math.round(colors.lastQuarter.r + (colors.newMoon.r - colors.lastQuarter.r) * smoothT),
+          g: Math.round(colors.lastQuarter.g + (colors.newMoon.g - colors.lastQuarter.g) * smoothT),
+          b: Math.round(colors.lastQuarter.b + (colors.newMoon.b - colors.lastQuarter.b) * smoothT)
+        };
+      }
+      
+      // 转换为16进制颜色
+      const hexColor = (targetColor.r << 16) | (targetColor.g << 8) | targetColor.b;
+      
+      return hexColor;
+    }
+    
+    /**
+     * 颜色插值函数
+     */
+    function lerpColor(color1, color2, t) {
+      const r1 = (color1 >> 16) & 0xff;
+      const g1 = (color1 >> 8) & 0xff;
+      const b1 = color1 & 0xff;
+      
+      const r2 = (color2 >> 16) & 0xff;
+      const g2 = (color2 >> 8) & 0xff;
+      const b2 = color2 & 0xff;
+      
+      const r = Math.round(r1 + (r2 - r1) * t);
+      const g = Math.round(g1 + (g2 - g1) * t);
+      const b = Math.round(b1 + (b2 - b1) * t);
+      
+      return (r << 16) | (g << 8) | b;
+    }
+
+    /**
      * 同步更新3D月相光照（直接匹配对齐程度，无过渡动画）
      */
     function update3DMoonPhaseSync(moonRelativeAngle, illumination) {
       if (!pipSunLight || !pip3DMoon) return;
+      
+      // 根据月相计算最佳观测时间的天空颜色
+      const skyColor = calculateSkyColor(moonRelativeAngle);
+      console.log(`同步函数 - 月相角度: ${(moonRelativeAngle * 180 / Math.PI).toFixed(1)}°, 天空颜色: #${skyColor.toString(16)}`);
       
       // 直接使用月球相对地球的角度，移除π/2修正
       const sunAngleFor3D = moonRelativeAngle;
@@ -935,6 +1049,11 @@
       const targetSunX = Math.sin(sunAngleFor3D) * sunDistance;
       const targetSunY = 0; // 保持在赤道平面
       const targetSunZ = Math.cos(sunAngleFor3D) * sunDistance;
+      
+      // 更新背景颜色
+      if (pipRenderer) {
+        pipRenderer.setClearColor(skyColor, 1.0);
+      }
       
       // 直接设置光源位置，不使用过渡动画
       pipSunLight.position.set(targetSunX, targetSunY, targetSunZ);
@@ -971,6 +1090,9 @@
       // 反推月球相对地球的实际角度
       const moonRelativeAngle = phaseAngle - Math.PI;
       
+      // 根据月相计算最佳观测时间的天空颜色
+      const skyColor = calculateSkyColor(moonRelativeAngle);
+      
       // 直接使用月球相对地球的角度，移除π/2修正
       const sunAngleFor3D = moonRelativeAngle;
       
@@ -981,6 +1103,11 @@
       const targetSunX = Math.sin(sunAngleFor3D) * sunDistance;  // X轴变化
       const targetSunY = 0; // 保持在赤道平面
       const targetSunZ = Math.cos(sunAngleFor3D) * sunDistance;  // Z轴变化，主要方向
+      
+      // 更新背景颜色
+      if (pipRenderer) {
+        pipRenderer.setClearColor(skyColor, 1.0);
+      }
       
       // 平滑过渡光源位置，避免瞬时变化 - 根据倍速调整
       const baseLightSpeed = 0.04;
