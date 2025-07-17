@@ -1077,11 +1077,11 @@ ul {
 
 #modalMask #helpWindow {
   position: relative;
-  background: rgba(32,28,22,0.93);
+  background: rgba(24, 24, 24,0.93);
   border: 1.5px solid #9b7c3e;
   border-radius: 15px;
   box-shadow: 0 2px 16px 0 rgba(50,40,20,.18);
-  width: 700px;
+  width: 600px;
   max-width: 90vw;
   min-height: 480px;
   padding: 0;
@@ -1112,7 +1112,7 @@ ul {
   flex-direction: row;
   align-items: stretch;
   justify-content: center;
-  padding: 36px 12px 8px 12px;
+  padding: 42px 12px 8px 12px;
   flex: 1;
   min-height: 320px;
 }
@@ -1174,10 +1174,35 @@ ul {
 #modalMask #helpWindow #helpBody #pagesContainer .helpPage {
   width: 100%;
   box-sizing: border-box;
+  padding: 0 20px;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer .helpPage h2 {
+    margin-bottom: 20px;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer .helpPage .helpContent {
+	font-family: SimSun, STXiHei, sans-serif;
+	font-size: 0.9rem;
+	line-height: 1.2rem;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer .helpPage .helpContent strong {
+	font-size: 0.95rem;
+	font-family: STSong, sans-serif;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer .helpPage .helpContent ul {
+	margin: 0;
+	padding: 0 0 0 10px;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer .helpPage .helpContent li {
+	margin-bottom: 8px;
 }
 
 #modalMask #helpWindow #pageSwitcher ul {
-	margin: 10px 0 20px 0;
+	margin: 10px 0 28px 0;
     display: flex;
 	flex-direction: row;
 	justify-content: space-between;
