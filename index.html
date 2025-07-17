@@ -350,7 +350,7 @@
       <i>x1</i>
     </button>
     <hr>
-    <button class="tool-btn" id="toolView" title="切换视角">
+    <button class="tool-btn" id="toolView" title="切换视角" onclick="clickOnToolView()">
       <i class="fa fa-eye"></i>
     </button>
     <button class="tool-btn" id="toolScreenshot" title="截图" onclick="clickOnToolScreenshot()">
@@ -437,10 +437,12 @@
     let isViewLocked = false; //是否是3D视角
     let targetAzimuth = 0;     // 水平角
     let targetElevation = 0;   // 垂直角
+    let targetRadius = 10;    // 距离
     let startMouseX = 0;
     let startMouseY = 0;
     let startAzimuth = 0;
     let startElevation = 0;
+    let mouseOnPanel = false;
     // 公共变量：场景、相机、渲染器、纹理
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -700,7 +702,7 @@
     });
     
     document.addEventListener('mousemove', (event) => {
-        if (!mouseDragging || isViewLocked) return;
+        if (!mouseDragging || isViewLocked || mouseOnPanel) return;
 
         const dx = event.clientX - startMouseX;
         const dy = event.clientY - startMouseY;
@@ -714,6 +716,12 @@
         const minElevation = -Math.PI / 2 + 0.01;
         targetElevation = Math.max(minElevation, Math.min(maxElevation, targetElevation));
     });
+    document.addEventListener('wheel', (event) => {
+        if(isViewLocked || mouseOnPanel) return;
+        const delta = Math.sign(event.deltaY);
+        targetRadius += delta * 0.5; // 调整缩放灵敏度
+        targetRadius = Math.max(3, Math.min(15, targetRadius)); // 限制缩放范围
+      })
 
     /* * * * * * * * * *
      * 动画更新
@@ -728,7 +736,7 @@
       }
         // 相机控制
         if (!isViewLocked) {
-            const r = 10; // 相机半径
+            const r = targetRadius; // 相机半径
 
             const x = r * Math.cos(targetElevation) * Math.sin(targetAzimuth);
             const y = r * Math.sin(targetElevation);
@@ -1249,6 +1257,12 @@
      * * * * * * * * * * * */
     //事件绑定
     controlBtn.addEventListener('click', switchControlPanel);
+    controlPanel.addEventListener('mouseenter', () => { 
+      mouseOnPanel = true;
+    });
+    controlPanel.addEventListener('mouseleave', () => {
+      mouseOnPanel = false;
+    });
     tabs.forEach(tab => { tab.addEventListener('click', switchTab); });
     earthTextureRadios.forEach(radio => { 
       radio.addEventListener('change', () => {
@@ -1532,27 +1546,44 @@
     }
 
       // 视角切换相关变量与函数
-
       const topViewRadio = document.getElementById('top-view');
       const sideViewRadio = document.getElementById('side-view');
       const view3DRadio = document.getElementById('3D-view');
 
       function switchToTopView() {
           isViewLocked = true;
-          camera.position.set(0, 20, 0);
+          camera.position.set(0, 15, 0);
           camera.up.set(0, 0, -1);
           camera.lookAt(scene.position);
       }
 
       function switchToSideView() {
           isViewLocked = true;
-          camera.position.set(20, 0, 0);
+          camera.position.set(15, 0, 0);
           camera.up.set(0, 1, 0);
           camera.lookAt(scene.position);
       }
 
       function switchTo3DView() {
           isViewLocked = false;
+      }
+
+      function clickOnToolView(){
+        if (topViewRadio.checked) {
+          switchToSideView();
+          topViewRadio.checked = false;
+          sideViewRadio.checked = true;
+        }
+        else if (sideViewRadio.checked) {
+          switchTo3DView();
+          sideViewRadio.checked = false;
+          view3DRadio.checked = true;
+        }
+        else if (view3DRadio.checked) {
+          switchToTopView();
+          view3DRadio.checked = false;
+          topViewRadio.checked = true;
+        }
       }
 
       // 绑定按钮事件
