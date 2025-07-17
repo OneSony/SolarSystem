@@ -289,6 +289,14 @@
               <button id="nextSolarEclipse">下一次日食</button>
               <button id="nextLunarEclipse">下一次月食</button>
             </li>
+            <li>
+              <button id="nextTotalSolarEclipse">下一次日全食</button>
+              <button id="nextPartialSolarEclipse">下一次日偏食</button>
+            </li>
+            <li>
+              <button id="nextTotalLunarEclipse">下一次月全食</button>
+              <button id="nextPartialLunarEclipse">下一次月偏食</button>
+            </li>
           </ul>
         </div>
         <hr>
@@ -1365,10 +1373,13 @@
     // 日食和月食按钮事件绑定
     document.getElementById('nextSolarEclipse').addEventListener('click', jumpToNextSolarEclipse);
     document.getElementById('nextLunarEclipse').addEventListener('click', jumpToNextLunarEclipse);
+    document.getElementById('nextTotalSolarEclipse').addEventListener('click', jumpToNextTotalSolarEclipse);
+    document.getElementById('nextPartialSolarEclipse').addEventListener('click', jumpToNextPartialSolarEclipse);
+    document.getElementById('nextTotalLunarEclipse').addEventListener('click', jumpToNextTotalLunarEclipse);
+    document.getElementById('nextPartialLunarEclipse').addEventListener('click', jumpToNextPartialLunarEclipse);
 
     
-    // 下一次月食按钮事件
-    // TODO
+    // 画中画开关事件绑定
     PIPSwitch.addEventListener('change', function() {
       if (PIPSwitch.checked) {
         pipContainer.style.display = 'block';
@@ -1669,12 +1680,28 @@
       const phaseDegrees = moonPhaseAngle * 180 / Math.PI;
       
       // 检查是否接近黄白交点（日月食可能）
-      const isNearNode = calculateMoonNodePosition(days).isNearNode;
+      const nodeData = calculateMoonNodePosition(days);
+      const isNearNode = nodeData.isNearNode;
+      const eclipseType = nodeData.eclipseType;
 
       if (phaseDegrees < 15 || phaseDegrees > 345) {
-        alignmentType = isNearNode ? '日食型新月' : '新月';
+        // 新月期间，可能发生日食
+        if (eclipseType === 'total') {
+          alignmentType = '日全食型新月';
+        } else if (eclipseType === 'partial') {
+          alignmentType = '日偏食型新月';
+        } else {
+          alignmentType = '新月';
+        }
       } else if (phaseDegrees > 165 && phaseDegrees < 195) {
-        alignmentType = isNearNode ? '月食型满月' : '满月';
+        // 满月期间，可能发生月食
+        if (eclipseType === 'total') {
+          alignmentType = '月全食型满月';
+        } else if (eclipseType === 'partial') {
+          alignmentType = '月偏食型满月';
+        } else {
+          alignmentType = '满月';
+        }
       } else if (phaseDegrees > 75 && phaseDegrees < 105) {
         alignmentType = '上弦月';
       } else if (phaseDegrees > 255 && phaseDegrees < 285) {
@@ -1753,12 +1780,28 @@
       const phaseDegrees = moonPhaseAngle * 180 / Math.PI;
       
       // 检查是否接近黄白交点（日月食可能）
-      const isNearNode = calculateMoonNodePosition(daysSinceOrigin).isNearNode;
+      const nodeData = calculateMoonNodePosition(daysSinceOrigin);
+      const isNearNode = nodeData.isNearNode;
+      const eclipseType = nodeData.eclipseType;
 
       if (phaseDegrees < 15 || phaseDegrees > 345) {
-        alignmentType = isNearNode ? '日食型新月' : '新月';
+        // 新月期间，可能发生日食
+        if (eclipseType === 'total') {
+          alignmentType = '日全食型新月';
+        } else if (eclipseType === 'partial') {
+          alignmentType = '日偏食型新月';
+        } else {
+          alignmentType = '新月';
+        }
       } else if (phaseDegrees > 165 && phaseDegrees < 195) {
-        alignmentType = isNearNode ? '月食型满月' : '满月';
+        // 满月期间，可能发生月食
+        if (eclipseType === 'total') {
+          alignmentType = '月全食型满月';
+        } else if (eclipseType === 'partial') {
+          alignmentType = '月偏食型满月';
+        } else {
+          alignmentType = '满月';
+        }
       } else if (phaseDegrees > 75 && phaseDegrees < 105) {
         alignmentType = '上弦月';
       } else if (phaseDegrees > 255 && phaseDegrees < 285) {
@@ -1971,8 +2014,21 @@
       const distFromDescending = normalizeAngle(angleFromDescendingNode);
       const minDistanceFromNode = Math.min(distFromAscending, distFromDescending);
       
-      // 判断是否接近交点（在约15度范围内）
-      const isNearNode = minDistanceFromNode < 0.26; // 约15度
+      // 设定阈值区分全食和偏食
+      const totalEclipseThreshold = 0.087; // 约5度 - 全食阈值
+      const partialEclipseThreshold = 0.26; // 约15度 - 偏食阈值
+      
+      // 判断食相类型
+      let eclipseType = 'none';
+      let isNearNode = false;
+      
+      if (minDistanceFromNode < totalEclipseThreshold) {
+        eclipseType = 'total';
+        isNearNode = true;
+      } else if (minDistanceFromNode < partialEclipseThreshold) {
+        eclipseType = 'partial';
+        isNearNode = true;
+      }
       
       // 计算月球的黄纬（基于轨道倾斜5.15度）
       // 由于交点位置调整到π/2和3π/2，黄纬计算公式需要相应调整
@@ -1986,6 +2042,7 @@
         distanceFromDescendingNode: distFromDescending,
         minDistanceFromNode: minDistanceFromNode,
         isNearNode: isNearNode,
+        eclipseType: eclipseType, // 新增：食相类型
         eclipticLatitude: eclipticLatitude,
         nearAscendingNode: distFromAscending < distFromDescending
       };
@@ -1993,7 +2050,7 @@
     
 
     // 寻找下一次日食的时间
-    function findNextSolarEclipse(currentDays, maxSearchDays = 10000) {
+    function findNextSolarEclipse(currentDays, maxSearchDays = 10000, eclipseType = 'any') {
       for (let i = 1; i < maxSearchDays; i++) {
         const testDay = currentDays + i;
         
@@ -2003,11 +2060,20 @@
         // 判断是否满足日食条件：
         // 1. 新月状态（月相0-15度或345-360度）
         // 2. 对齐程度高（>95%）
-        // 3. 接近黄白交点
+        // 3. 根据参数判断食相类型
         if ((syzygyData.moonPhase < 15 || syzygyData.moonPhase > 345) &&
-            syzygyData.progress > 95 && 
-            syzygyData.isNearEclipseNode) {
-          return testDay;
+            syzygyData.progress > 95) {
+          
+          const nodeData = calculateMoonNodePosition(testDay);
+          
+          // 根据参数判断食相类型
+          if (eclipseType === 'any' && nodeData.isNearNode) {
+            return { day: testDay, type: nodeData.eclipseType };
+          } else if (eclipseType === 'total' && nodeData.eclipseType === 'total') {
+            return { day: testDay, type: 'total' };
+          } else if (eclipseType === 'partial' && nodeData.eclipseType === 'partial') {
+            return { day: testDay, type: 'partial' };
+          }
         }
       }
       
@@ -2015,7 +2081,7 @@
     }
     
     // 寻找下一次月食的时间
-    function findNextLunarEclipse(currentDays, maxSearchDays = 10000) {
+    function findNextLunarEclipse(currentDays, maxSearchDays = 10000, eclipseType = 'any') {
       for (let i = 1; i < maxSearchDays; i++) {
         const testDay = currentDays + i;
         
@@ -2025,11 +2091,20 @@
         // 判断是否满足月食条件：
         // 1. 满月状态（月相165-195度）
         // 2. 对齐程度高（>95%）
-        // 3. 接近黄白交点
+        // 3. 根据参数判断食相类型
         if (syzygyData.moonPhase > 165 && syzygyData.moonPhase < 195 &&
-            syzygyData.progress > 95 && 
-            syzygyData.isNearEclipseNode) {
-          return testDay;
+            syzygyData.progress > 95) {
+          
+          const nodeData = calculateMoonNodePosition(testDay);
+          
+          // 根据参数判断食相类型
+          if (eclipseType === 'any' && nodeData.isNearNode) {
+            return { day: testDay, type: nodeData.eclipseType };
+          } else if (eclipseType === 'total' && nodeData.eclipseType === 'total') {
+            return { day: testDay, type: 'total' };
+          } else if (eclipseType === 'partial' && nodeData.eclipseType === 'partial') {
+            return { day: testDay, type: 'partial' };
+          }
         }
       }
       
@@ -2048,18 +2123,21 @@
       
       // 使用 setTimeout 让UI有时间更新
       setTimeout(() => {
-        const nextEclipseDay = findNextSolarEclipse(days, 10000); // 搜索接下来2000天内
+        const nextEclipse = findNextSolarEclipse(days, 10000); // 搜索接下来27年内
         
-        if (nextEclipseDay !== null) {
-          stepSimulation(nextEclipseDay, true);
+        if (nextEclipse !== null) {
+          stepSimulation(nextEclipse.day, true);
           console.log('跳转到下一次日食：', dateCurrent.toLocaleDateString());
           
           // 获取该日期的对齐数据
-          const syzygyData = calculateSyzygyProgressForDay(nextEclipseDay);
+          const syzygyData = calculateSyzygyProgressForDay(nextEclipse.day);
+          
+          // 根据食相类型显示不同消息
+          const eclipseTypeText = nextEclipse.type === 'total' ? '日全食' : '日偏食';
           
           // 显示成功消息
-          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipseDay * 24 * 60 * 60 * 1000);
-          alert(`找到下一次日食！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n接近交点：${syzygyData.isNearEclipseNode ? '是' : '否'}`);
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
+          alert(`找到下一次${eclipseTypeText}！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
         } else {
           alert('在接下来的27年内未找到日食');
         }
@@ -2082,23 +2160,142 @@
       
       // 使用 setTimeout 让UI有时间更新
       setTimeout(() => {
-        const nextEclipseDay = findNextLunarEclipse(days, 10000); // 搜索接下来2000天内
+        const nextEclipse = findNextLunarEclipse(days, 10000); // 搜索接下来27年内
         
-        if (nextEclipseDay !== null) {
-          stepSimulation(nextEclipseDay, true);
+        if (nextEclipse !== null) {
+          stepSimulation(nextEclipse.day, true);
           console.log('跳转到下一次月食：', dateCurrent.toLocaleDateString());
           
           // 获取该日期的对齐数据
-          const syzygyData = calculateSyzygyProgressForDay(nextEclipseDay);
+          const syzygyData = calculateSyzygyProgressForDay(nextEclipse.day);
+          
+          // 根据食相类型显示不同消息
+          const eclipseTypeText = nextEclipse.type === 'total' ? '月全食' : '月偏食';
           
           // 显示成功消息
-          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipseDay * 24 * 60 * 60 * 1000);
-          alert(`找到下一次月食！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n接近交点：${syzygyData.isNearEclipseNode ? '是' : '否'}`);
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
+          alert(`找到下一次${eclipseTypeText}！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
         } else {
           alert('在接下来的27年内未找到月食');
         }
         
         // 恢复按钮
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 100);
+    }
+
+    // 跳转到下一次日全食
+    function jumpToNextTotalSolarEclipse() {
+      console.log('正在搜索下一次日全食...');
+      
+      const button = document.getElementById('nextTotalSolarEclipse');
+      const originalText = button.textContent;
+      button.textContent = '搜索中...';
+      button.disabled = true;
+      
+      setTimeout(() => {
+        const nextEclipse = findNextSolarEclipse(days, 10000, 'total');
+        
+        if (nextEclipse !== null) {
+          stepSimulation(nextEclipse.day, true);
+          console.log('跳转到下一次日全食：', dateCurrent.toLocaleDateString());
+          
+          const syzygyData = calculateSyzygyProgressForDay(nextEclipse.day);
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
+          
+          alert(`找到下一次日全食！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+        } else {
+          alert('在接下来的27年内未找到日全食');
+        }
+        
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 100);
+    }
+    
+    // 跳转到下一次日偏食
+    function jumpToNextPartialSolarEclipse() {
+      console.log('正在搜索下一次日偏食...');
+      
+      const button = document.getElementById('nextPartialSolarEclipse');
+      const originalText = button.textContent;
+      button.textContent = '搜索中...';
+      button.disabled = true;
+      
+      setTimeout(() => {
+        const nextEclipse = findNextSolarEclipse(days, 10000, 'partial');
+        
+        if (nextEclipse !== null) {
+          stepSimulation(nextEclipse.day, true);
+          console.log('跳转到下一次日偏食：', dateCurrent.toLocaleDateString());
+          
+          const syzygyData = calculateSyzygyProgressForDay(nextEclipse.day);
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
+          
+          alert(`找到下一次日偏食！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+        } else {
+          alert('在接下来的27年内未找到日偏食');
+        }
+        
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 100);
+    }
+    
+    // 跳转到下一次月全食
+    function jumpToNextTotalLunarEclipse() {
+      console.log('正在搜索下一次月全食...');
+      
+      const button = document.getElementById('nextTotalLunarEclipse');
+      const originalText = button.textContent;
+      button.textContent = '搜索中...';
+      button.disabled = true;
+      
+      setTimeout(() => {
+        const nextEclipse = findNextLunarEclipse(days, 10000, 'total');
+        
+        if (nextEclipse !== null) {
+          stepSimulation(nextEclipse.day, true);
+          console.log('跳转到下一次月全食：', dateCurrent.toLocaleDateString());
+          
+          const syzygyData = calculateSyzygyProgressForDay(nextEclipse.day);
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
+          
+          alert(`找到下一次月全食！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+        } else {
+          alert('在接下来的27年内未找到月全食');
+        }
+        
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 100);
+    }
+    
+    // 跳转到下一次月偏食
+    function jumpToNextPartialLunarEclipse() {
+      console.log('正在搜索下一次月偏食...');
+      
+      const button = document.getElementById('nextPartialLunarEclipse');
+      const originalText = button.textContent;
+      button.textContent = '搜索中...';
+      button.disabled = true;
+      
+      setTimeout(() => {
+        const nextEclipse = findNextLunarEclipse(days, 10000, 'partial');
+        
+        if (nextEclipse !== null) {
+          stepSimulation(nextEclipse.day, true);
+          console.log('跳转到下一次月偏食：', dateCurrent.toLocaleDateString());
+          
+          const syzygyData = calculateSyzygyProgressForDay(nextEclipse.day);
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
+          
+          alert(`找到下一次月偏食！\n日期：${eclipseDate.toLocaleDateString()}\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+        } else {
+          alert('在接下来的27年内未找到月偏食');
+        }
+        
         button.textContent = originalText;
         button.disabled = false;
       }, 100);
