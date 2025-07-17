@@ -41,7 +41,7 @@ button {
   top: 28px;
   left: 96%;
   transform: translateX(-100%);
-  z-index: 1010;
+  z-index: 10;
   display: flex;
   align-items: center;
   background: rgba(32,28,22,0.93);
@@ -58,6 +58,7 @@ button {
   -ms-transform: translateX(-100%);
   -o-transform: translateX(-100%);
 }
+
 .dashboard-item {
   display: flex;
   flex-direction: column;
@@ -65,6 +66,7 @@ button {
   padding: 0 13px;
   min-width: 90px;
 }
+
 .db-label {
   color: #c9a35c;;
   font-size: 14px;
@@ -72,13 +74,15 @@ button {
   letter-spacing: 0.03em;
   margin-bottom: 3px;
 }
+
 .db-value {
   color: #fcfcfc;
-  font-size: 18px;
+  font-size: 16px;
   font-family: 'Roboto Mono', 'Consolas', monospace;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
+
 .dashboard-divider {
   width: 1.5px;
   height: 38px;
@@ -234,6 +238,10 @@ button {
 	margin: 16px 0;
 }
 
+#controlPanel #panels::-webkit-scrollbar {
+    display: none;
+}
+
 ul {
 	padding: 0;
 }
@@ -365,6 +373,63 @@ ul {
 
 #controlPanel #panels .panel #textureSettings #starland h5 {
 	line-height: 48px;
+}
+
+#controlPanel #panels .panel #auxiliarySettings ul {
+    display: flex;
+	flex-direction: column;
+}
+
+#controlPanel #panels .panel #auxiliarySettings label {
+	margin: 5px 0;
+	display: flex;
+    flex-direction: row;
+	justify-content: space-between;
+	width: 160px;
+}
+
+#controlPanel #panels .panel #auxiliarySettings label i{
+	width: 16px;
+	height: 16px;
+	background: #282828;
+	border: 2px solid #646464;
+	border-radius: 3px;
+	box-sizing: border-box;
+	display: inline-block;
+	position: relative;
+	transition: border-color 0.15s;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	-ms-border-radius: 3px;
+	-o-border-radius: 3px;
+	-webkit-transition: border-color 0.15s;
+	-moz-transition: border-color 0.15s;
+	-ms-transition: border-color 0.15s;
+	-o-transition: border-color 0.15s;
+}
+
+#controlPanel #panels .panel #auxiliarySettings label i span{
+	display: inline-block;
+	opacity: 0;
+	position: relative;
+	left: 0px;
+	font-family:Verdana, Geneva, Tahoma, sans-serif;
+	font-size: 10px;
+	font-weight: 700;
+	color: #cccccc;
+}
+
+#controlPanel #panels .panel #auxiliarySettings label i:hover {
+	background-color: #969696;
+}
+
+
+#controlPanel #panels .panel #auxiliarySettings input[type="checkbox"]:checked + label i {
+	border-color: #c9a35c;
+}
+
+#controlPanel #panels .panel #auxiliarySettings input[type="checkbox"]:checked + label i span {
+	opacity: 1;
 }
 
 #controlPanel #panels .panel #PIPSettings ul {
@@ -679,55 +744,48 @@ ul {
 	background-color: #c9a35c;
 }
 
-#controlPanel #panels .panel #sizeSettings ul {
+#controlPanel #panels .panel #accessibility ul {
     display: flex;
-	flex-direction: row;
+	flex-direction: column;
 	align-items: start;
 }
 
-#controlPanel #panels .panel #sizeSettings ul li {
+#controlPanel #panels .panel #accessibility ul li {
 	display: flex;
-    flex-direction: column;
+    flex-direction: row;
+	justify-content: space-between;
+	width: 200px;
 }
 
-#controlPanel #panels .panel #sizeSettings .size-label {
-	display: flex;
-	flex-direction: column
+#controlPanel #panels .panel #accessibility h5{
+	padding-top: 2px;
+    line-height: 24px;
 }
 
-#controlPanel #panels .panel #sizeSettings .size-label i{
+#controlPanel #panels .panel #accessibility button {
+	appearance: none;
+	height: 24px;
+	width: 120px;
+	border: #a68d60 solid 1px;
 	background-color: #282828;
-	box-sizing: border-box;
-	width: 60px;
-	height: 60px;
-	margin: 0 10px 10px 10px;
-	border-radius: 15%;
-	-webkit-border-radius: 15%;
-	-moz-border-radius: 15%;
-	-ms-border-radius: 15%;
-	-o-border-radius: 15%;
-	font-size: 32px;
-	text-align: center;
-	line-height: 60px;
-	transition: color .2s, border .2s;
-	-webkit-transition: color .2s, border .2s;
-	-moz-transition: color .2s, border .2s;
-	-ms-transition: color .2s, border .2s;
-	-o-transition: color .2s, border .2s;
+	color: #c0c0c0;
+	border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+	margin: 4px 4px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
 }
 
-#controlPanel #panels .panel #sizeSettings input[type="radio"]:checked + .size-label i {
-    color: #c9a35c;
-	border: #c9a35c 2px solid;
+#controlPanel #panels .panel #accessiblity button:hover {
+	background-color: #9f803c;
 }
 
-#controlPanel #panels .panel #sizeSettings .size-label span{
-	text-align: center;
+#controlPanel #panels .panel #accessibility button:active {
+	border: #282828 solid 1px;
+	background-color: #c9a35c;
 }
 
-#controlPanel #panels .panel #sizeSettings input[type="radio"]:checked + .size-label span {
-	color: #c9a35c;
-}
 
 @keyframes fadeIn {
 	from { opacity: 0; transform: translateY(16px); -webkit-transform: translateY(16px); -moz-transform: translateY(16px); -ms-transform: translateY(16px); -o-transform: translateY(16px); }

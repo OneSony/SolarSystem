@@ -171,30 +171,29 @@
               </li>
             </ul>
           </div>
-          <div id="earthAxis">
-            <h5>地轴显示</h5>
-            <ul>
-              <li>
-                <input type="checkbox" id="axisSwitch" checked hidden>
-                <label for="axisSwitch" class="texture-label">
-                  <i></i>
-                  <span>显示地轴</span>
-                </label>
-              </li>
-            </ul>
-          </div>
-          <div id="moonOrbitNormal">
-            <h5>月球轨道法向量</h5>
-            <ul>
-              <li>
-                <input type="checkbox" id="moonNormalSwitch" checked hidden>
-                <label for="moonNormalSwitch" class="texture-label">
-                  <i></i>
-                  <span>显示轨道法向量</span>
-                </label>
-              </li>
-            </ul>
-          </div>
+        </div>
+        <hr>
+        <div class="contorl-block" id="auxiliarySettings">
+          <h4>
+            <span class="zh">辅助显示</span>
+            <span class="en">Auxiliary Information</span>
+          </h4>
+          <ul>
+            <li>
+              <input type="checkbox" id="axisSwitch" checked hidden>
+              <label for="axisSwitch" class="texture-label">
+                <span>显示地轴</span>
+                <i><span>√</span></i>
+              </label>
+            </li>
+            <li>
+              <input type="checkbox" id="moonNormalSwitch" checked hidden>
+              <label for="moonNormalSwitch" class="texture-label">
+                <span>显示轨道法向量</span>
+                <i><span>√</span></i>
+              </label>
+            </li>
+          </ul>
         </div>
         <hr>
         <!-- 控制块：日月食画中画 -->
@@ -221,7 +220,6 @@
             </select>
           </li></ul>
         </div>
-      <p>TODO: 或许有一些其他需要的配置</p>
       </div>
       <!-- 标签页3：参数调整 -->
       <div class="panel" id="page3">
@@ -277,38 +275,22 @@
               <button id="nextSolarEclipse">下一次日食</button>
               <button id="nextLunarEclipse">下一次月食</button>
             </li>
+          </ul>
+        </div>
+        <hr>
+        <!-- 控制块：辅助功能 -->
+        <div class="contorl-block" id="accessibility">
+          <h4>
+            <span class="zh">辅助功能</span>
+            <span class="en">Accessibility</span>
+          </h4>
+          <ul>
             <li>
+              <h5>状态分析</h5>
               <button id="analyzeAlignment" onclick="showAlignmentAnalysis()">分析当前对齐</button>
             </li>
           </ul>
         </div>
-        <hr>
-        <!-- 控制块：天体尺寸 -->
-        <div class="contorl-block" id="sizeSettings">
-          <h4>
-            <span class="zh">天体尺寸</span>
-            <span class="en">Celestial size</span>
-          </h4>
-          <ul>
-            <li>
-              <input type="radio" name="size" id="suitable-size" value="suitable-size" checked hidden>
-              
-              <label for="suitable-size" class="size-label">
-                <i class="fa fa-eye"></i>
-                <span>适宜观察</span>
-              </label>
-            </li>
-            <li>
-              <input type="radio" name="size" id="true-size" value="true-size" hidden>
-              <label for="true-size" class="size-label">
-                <i class="fa fa-bullseye"></i>
-                <span>真实大小</span>
-              </label>
-            </li>
-          </ul>
-        </div>
-        <hr>
-        <p>TODO: 或许有一些其他需要的配置</p>
       </div>
     </div>
   </aside>
