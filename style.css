@@ -13,6 +13,10 @@ button {
 	background-color: transparent;
 }
 
+li {
+	list-style: none;
+}
+
 #title {
 	position: absolute;
 	top: 6px;
@@ -395,7 +399,9 @@ ul {
 	border: 2px solid #646464;
 	border-radius: 3px;
 	box-sizing: border-box;
-	display: inline-block;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	position: relative;
 	transition: border-color 0.15s;
 	-webkit-border-radius: 3px;
