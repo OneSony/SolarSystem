@@ -1278,6 +1278,12 @@
         }
       });
     }
+    
+    // 下一次月食按钮事件
+    const nextLunarEclipseBtn = document.getElementById('nextLunarEclipse');
+    if (nextLunarEclipseBtn) {
+      nextLunarEclipseBtn.addEventListener('click', predictNextLunarEclipse);
+    }
     PIPSwitch.addEventListener('change', function() {
       if (PIPSwitch.checked) {
         pipContainer.style.display = 'block';
@@ -1825,19 +1831,74 @@
       alert(analysisText);
     }
 
-    // 窗口大小调整时的处理
-    window.addEventListener('resize', function() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    /**
+     * 预测下一次月食
+     */
+    function predictNextLunarEclipse() {
+      // 月食条件：
+      // 1. 满月状态（月相角度接近180°）
+      // 2. 月球接近黄白交点（轨道倾斜角度较小）
       
-      // 重新调整3D月相渲染器
-      if (pipRenderer && isPipVisible) {
-        setTimeout(() => {
-          resize3DMoonPhase();
-        }, 100);
+      const currentSyzygy = calculateSyzygyProgress();
+      const currentDays = days;
+      const synodicPeriod = 29.530588853; // 朔望月周期
+      const nodePeriod = 18.6 * 365.25; // 月球轨道交点周期
+      
+      let searchDays = 0;
+      let bestEclipseDay = null;
+      let bestScore = 0;
+      
+      // 搜索未来月食机会（不限制时间范围）
+      const maxSearchDays = 10 * 365; // 扩展到10年搜索范围
+      
+      for (let d = 1; d <= maxSearchDays; d += 0.5) { // 每12小时检查一次
+        // 模拟天体位置
+        const testDays = currentDays + d;
+        const testEarthAngle = testDays * earthRevolveAnglePerDay;
+        const testMoonInOrbit = testDays * moonRevolveAnglePerDay;
+        const testMoonOrbitPrecession = testDays * moonOrbitPrecessionPerDay;
+        const testMoonRelativeToEarth = testMoonInOrbit + testMoonOrbitPrecession;
+        
+        // 计算月相角度
+        let testMoonPhase = (testMoonRelativeToEarth + Math.PI) % (2 * Math.PI);
+        if (testMoonPhase < 0) testMoonPhase += 2 * Math.PI;
+        
+        const testMoonPhaseDegrees = testMoonPhase * 180 / Math.PI;
+        
+        // 检查是否为满月（170°-190°范围）
+        const isNearFullMoon = testMoonPhaseDegrees >= 170 && testMoonPhaseDegrees <= 190;
+        
+        // 检查是否接近黄白交点
+        const testNodePosition = Math.abs(Math.sin(testMoonOrbitPrecession));
+        const isNearNode = testNodePosition < 0.1; // 约6度容差
+        
+        if (isNearFullMoon && isNearNode) {
+          // 计算月食得分（满月程度 + 交点接近程度）
+          const fullMoonScore = 1 - Math.abs(testMoonPhaseDegrees - 180) / 20; // 越接近180°得分越高
+          const nodeScore = 1 - testNodePosition / 0.1; // 越接近交点得分越高
+          const totalScore = fullMoonScore * nodeScore;
+          
+          if (totalScore > bestScore) {
+            bestScore = totalScore;
+            bestEclipseDay = testDays;
+          }
+        }
       }
-    });
+      
+      if (bestEclipseDay) {
+        // 跳转到预测的月食日期
+        stepSimulation(bestEclipseDay, true);
+        
+        const eclipseDate = new Date(dateOrigin.getTime() + bestEclipseDay * 24 * 60 * 60 * 1000);
+        const daysFromNow = Math.round(bestEclipseDay - currentDays);
+        
+        alert(`下一次月食预测：\n日期：${eclipseDate.toLocaleDateString()}\n距离现在：${daysFromNow}天\n月食质量评分：${(bestScore * 100).toFixed(1)}%\n\n注意：这是基于简化模型的预测，实际月食时间可能略有差异。`);
+      } else {
+        alert('在未来10年内未找到明显的月食机会。\n月食需要满月时月球恰好经过地球阴影区域。');
+      }
+    }
+
+    // ...existing code...
   </script>
 </body>
 </html>
