@@ -195,6 +195,18 @@
               </li>
             </ul>
           </div>
+          <div id="moonNodes">
+            <h5>黄白交点</h5>
+            <ul>
+              <li>
+                <input type="checkbox" id="moonNodesSwitch" checked hidden>
+                <label for="moonNodesSwitch" class="texture-label">
+                  <i></i>
+                  <span>显示黄白交点</span>
+                </label>
+              </li>
+            </ul>
+          </div>
         </div>
         <hr>
         <!-- 控制块：日月食画中画 -->
@@ -398,6 +410,7 @@
     const starlandRadios = document.querySelectorAll('#starland input');
     const axisSwitch = document.getElementById('axisSwitch');
     const moonNormalSwitch = document.getElementById('moonNormalSwitch');
+    const moonNodesSwitch = document.getElementById('moonNodesSwitch');
     const speedInput = document.getElementById('speedInput');
     const speedLabel = document.getElementById('speedLabel');
     const reserveSwitch = document.getElementById('reserveSwitch');
@@ -598,6 +611,41 @@
     // 将法向量添加到月球轨道组中，这样它会跟随轨道倾斜和进动
     moonOrbitGroup.add(moonOrbitNormalGroup);
 
+    // 创建黄白交点标记（月球轨道与黄道面的交点）
+    // 升交点（从黄道面下方穿过到上方）
+    const ascendingNodeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+    const ascendingNodeMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x00ff00,  // 绿色表示升交点
+      transparent: true,
+      opacity: 0.9
+    });
+    const ascendingNode = new THREE.Mesh(ascendingNodeGeometry, ascendingNodeMaterial);
+    
+    // 降交点（从黄道面上方穿过到下方）
+    const descendingNodeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+    const descendingNodeMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xff0000,  // 红色表示降交点
+      transparent: true,
+      opacity: 0.9
+    });
+    const descendingNode = new THREE.Mesh(descendingNodeGeometry, descendingNodeMaterial);
+    
+    // 黄白交点位于月球轨道上，距离地球1.2个单位
+    // 考虑到轨道倾斜的几何关系，交点应该在z轴方向
+    // 升交点位于角度π/2的位置，降交点位于角度3π/2的位置
+    const moonOrbitRadius = 1.2;
+    ascendingNode.position.set(0, 0, moonOrbitRadius);
+    descendingNode.position.set(0, 0, -moonOrbitRadius);
+    
+    // 将交点添加到月球轨道组中，这样它们会跟随轨道倾斜和进动
+    moonOrbitGroup.add(ascendingNode);
+    moonOrbitGroup.add(descendingNode);
+    
+    // 创建交点标签
+    const nodeLabels = createNodeLabels();
+    moonOrbitGroup.add(nodeLabels.ascending);
+    moonOrbitGroup.add(nodeLabels.descending);
+
     // 创建地轴（独立的组，不跟随地球自转）
     const axisGeometry = new THREE.CylinderGeometry(0.005, 0.005, 1.5, 8);
     const axisMaterial = new THREE.MeshBasicMaterial({ 
@@ -664,6 +712,45 @@
     moonOrbitRing.rotation.x = -Math.PI / 2;
     // 月球轨道环相对于月球轨道组的倾斜需要考虑到组本身的倾斜
     moonOrbitGroup.add(moonOrbitRing);
+
+    // 创建交点标签的函数
+    function createNodeLabels() {
+      // 创建升交点标签
+      const canvas1 = document.createElement('canvas');
+      canvas1.width = 128;
+      canvas1.height = 64;
+      const context1 = canvas1.getContext('2d');
+      context1.font = '16px Arial';
+      context1.fillStyle = '#00ff00';
+      context1.textAlign = 'center';
+      context1.fillText('升交点', 64, 32);
+      context1.fillText('☊', 64, 50);
+      
+      const texture1 = new THREE.CanvasTexture(canvas1);
+      const material1 = new THREE.SpriteMaterial({ map: texture1 });
+      const ascending = new THREE.Sprite(material1);
+      ascending.position.set(0, 0.2, 1.2);
+      ascending.scale.set(0.5, 0.25, 1);
+      
+      // 创建降交点标签
+      const canvas2 = document.createElement('canvas');
+      canvas2.width = 128;
+      canvas2.height = 64;
+      const context2 = canvas2.getContext('2d');
+      context2.font = '16px Arial';
+      context2.fillStyle = '#ff0000';
+      context2.textAlign = 'center';
+      context2.fillText('降交点', 64, 32);
+      context2.fillText('☋', 64, 50);
+      
+      const texture2 = new THREE.CanvasTexture(canvas2);
+      const material2 = new THREE.SpriteMaterial({ map: texture2 });
+      const descending = new THREE.Sprite(material2);
+      descending.position.set(0, 0.2, -1.2);
+      descending.scale.set(0.5, 0.25, 1);
+      
+      return { ascending, descending };
+    }
 
     //星空
     const starfield = createStarfield(scene, 2000, 800);
@@ -1311,6 +1398,11 @@
         cleanup3DMoonPhase();
       }
     });
+    moonNodesSwitch.addEventListener('change', changeMoonNodesVisibility);
+    
+    // 日食和月食按钮事件绑定
+    document.getElementById('nextSolarEclipse').addEventListener('click', jumpToNextSolarEclipse);
+    document.getElementById('nextLunarEclipse').addEventListener('click', jumpToNextLunarEclipse);
 
     //控制面板开关
     function switchControlPanel(){
@@ -1380,6 +1472,12 @@
     //修改月球轨道法向量显示
     function changeMoonNormalVisibility() {
       moonOrbitNormalGroup.visible = moonNormalSwitch.checked;
+    }
+
+    //修改黄白交点显示
+    function changeMoonNodesVisibility() {
+      ascendingNode.visible = moonNodesSwitch.checked;
+      descendingNode.visible = moonNodesSwitch.checked;
     }
 
     //修改速度
@@ -1899,6 +1997,391 @@
     }
 
     // ...existing code...
+    
+    /* * * * * * * * * * * * * * * * * * * * * * * * *
+     * 日食和月食判断功能
+     * * * * * * * * * * * * * * * * * * * * * * * * */
+    
+    // 计算月球相对于黄白交点的位置
+    function calculateMoonNodePosition(daysSinceOrigin) {
+      // 月球在轨道上的位置角度（月球公转）
+      const moonOrbitAngle = daysSinceOrigin * moonRevolveAnglePerDay;
+      
+      // 月球轨道进动角度（轨道面的进动，约18.6年周期）
+      const moonOrbitPrecessionAngle = daysSinceOrigin * moonOrbitPrecessionPerDay;
+      
+      // 计算月球相对于交点的角度
+      // 升交点位于角度π/2，降交点位于角度3π/2
+      const angleFromAscendingNode = moonOrbitAngle - Math.PI/2;
+      const angleFromDescendingNode = moonOrbitAngle - 3*Math.PI/2;
+      
+      // 标准化角度到[0, π]范围，取最小值
+      const normalizeAngle = (angle) => {
+        const normalized = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        return Math.min(normalized, 2 * Math.PI - normalized);
+      };
+      
+      const distFromAscending = normalizeAngle(angleFromAscendingNode);
+      const distFromDescending = normalizeAngle(angleFromDescendingNode);
+      const minDistanceFromNode = Math.min(distFromAscending, distFromDescending);
+      
+      // 判断是否接近交点（在约15度范围内）
+      const isNearNode = minDistanceFromNode < 0.26; // 约15度
+      
+      // 计算月球的黄纬（基于轨道倾斜5.15度）
+      // 由于交点位置调整到π/2和3π/2，黄纬计算公式需要相应调整
+      const moonOrbitInclination = THREE.MathUtils.degToRad(5.15);
+      const eclipticLatitude = -Math.cos(moonOrbitAngle) * Math.sin(moonOrbitInclination);
+      
+      return {
+        moonOrbitAngle: moonOrbitAngle,
+        moonOrbitPrecessionAngle: moonOrbitPrecessionAngle,
+        distanceFromAscendingNode: distFromAscending,
+        distanceFromDescendingNode: distFromDescending,
+        minDistanceFromNode: minDistanceFromNode,
+        isNearNode: isNearNode,
+        eclipticLatitude: eclipticLatitude,
+        nearAscendingNode: distFromAscending < distFromDescending
+      };
+    }
+    
+    // 计算太阳、地球、月球的相对位置
+    function calculateCelestialPositions(daysSinceOrigin) {
+      // 地球绕太阳公转的角度
+      const earthOrbitAngle = daysSinceOrigin * earthRevolveAnglePerDay;
+      
+      // 月球数据
+      const moonData = calculateMoonNodePosition(daysSinceOrigin);
+      
+      // 太阳的位置（固定在原点）
+      const sunPosition = { x: 0, y: 0, z: 0 };
+      
+      // 地球的位置（绕太阳公转）
+      const earthPosition = {
+        x: 5 * Math.cos(earthOrbitAngle),
+        y: 0,
+        z: 5 * Math.sin(earthOrbitAngle)
+      };
+      
+      // 月球相对于地球的位置（基于轨道角度）
+      const moonOrbitRadius = 1.2;
+      const moonRelativeToEarth = {
+        x: moonOrbitRadius * Math.cos(moonData.moonOrbitAngle),
+        y: 0,
+        z: moonOrbitRadius * Math.sin(moonData.moonOrbitAngle)
+      };
+      
+      // 月球的绝对位置
+      const moonPosition = {
+        x: earthPosition.x + moonRelativeToEarth.x,
+        y: earthPosition.y + moonRelativeToEarth.y,
+        z: earthPosition.z + moonRelativeToEarth.z
+      };
+      
+      return {
+        sun: sunPosition,
+        earth: earthPosition,
+        moon: moonPosition,
+        moonEclipticLatitude: moonData.eclipticLatitude,
+        moonOrbitAngle: moonData.moonOrbitAngle
+      };
+    }
+    
+    // 判断三个天体是否接近共线
+    function areThreeBodiesAligned(pos1, pos2, pos3, threshold = 0.1) {
+      // 计算从pos1到pos2的向量
+      const vec1 = {
+        x: pos2.x - pos1.x,
+        y: pos2.y - pos1.y,
+        z: pos2.z - pos1.z
+      };
+      
+      // 计算从pos1到pos3的向量
+      const vec2 = {
+        x: pos3.x - pos1.x,
+        y: pos3.y - pos1.y,
+        z: pos3.z - pos1.z
+      };
+      
+      // 计算向量的模长
+      const len1 = Math.sqrt(vec1.x * vec1.x + vec1.y * vec1.y + vec1.z * vec1.z);
+      const len2 = Math.sqrt(vec2.x * vec2.x + vec2.y * vec2.y + vec2.z * vec2.z);
+      
+      if (len1 === 0 || len2 === 0) return false;
+      
+      // 计算两向量的夹角余弦值
+      const dot = vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
+      const cosAngle = dot / (len1 * len2);
+      
+      // 判断是否接近共线（夹角接近0度或180度）
+      return Math.abs(Math.abs(cosAngle) - 1) < threshold;
+    }
+    
+    // 检查是否发生日食
+    function isSolarEclipse(positions) {
+      // 日食条件：月球在太阳和地球之间，且月球接近黄白交点
+      
+      // 关键条件：月球必须接近轨道交点（升交点或降交点）
+      if (!positions.moonData.isNearNode) {
+        return false;
+      }
+      
+      // 计算太阳到地球的距离
+      const sunToEarth = Math.sqrt(
+        Math.pow(positions.earth.x - positions.sun.x, 2) +
+        Math.pow(positions.earth.y - positions.sun.y, 2) +
+        Math.pow(positions.earth.z - positions.sun.z, 2)
+      );
+      
+      // 计算太阳到月球的距离
+      const sunToMoon = Math.sqrt(
+        Math.pow(positions.moon.x - positions.sun.x, 2) +
+        Math.pow(positions.moon.y - positions.sun.y, 2) +
+        Math.pow(positions.moon.z - positions.sun.z, 2)
+      );
+      
+      // 月球必须在太阳和地球之间
+      const moonBetweenSunAndEarth = sunToMoon < sunToEarth;
+      
+      // 月球必须接近黄道面（黄纬很小）
+      const moonNearEclipticPlane = Math.abs(positions.moonEclipticLatitude) < 0.05; // 黄纬小于约3度
+      
+      // 三个天体必须接近共线
+      const bodiesAligned = areThreeBodiesAligned(positions.sun, positions.moon, positions.earth, 0.15);
+      
+      return moonBetweenSunAndEarth && moonNearEclipticPlane && bodiesAligned;
+    }
+    
+    // 检查是否发生月食
+    function isLunarEclipse(positions) {
+      // 月食条件：地球在太阳和月球之间，且月球接近黄白交点
+      
+      // 关键条件：月球必须接近轨道交点（升交点或降交点）
+      if (!positions.moonData.isNearNode) {
+        return false;
+      }
+      
+      // 计算太阳到地球的距离
+      const sunToEarth = Math.sqrt(
+        Math.pow(positions.earth.x - positions.sun.x, 2) +
+        Math.pow(positions.earth.y - positions.sun.y, 2) +
+        Math.pow(positions.earth.z - positions.sun.z, 2)
+      );
+      
+      // 计算太阳到月球的距离
+      const sunToMoon = Math.sqrt(
+        Math.pow(positions.moon.x - positions.sun.x, 2) +
+        Math.pow(positions.moon.y - positions.sun.y, 2) +
+        Math.pow(positions.moon.z - positions.sun.z, 2)
+      );
+      
+      // 地球必须在太阳和月球之间
+      const earthBetweenSunAndMoon = sunToEarth < sunToMoon;
+      
+      // 月球必须接近黄道面（黄纬很小）
+      const moonNearEclipticPlane = Math.abs(positions.moonEclipticLatitude) < 0.05; // 黄纬小于约3度
+      
+      // 三个天体必须接近共线
+      const bodiesAligned = areThreeBodiesAligned(positions.sun, positions.earth, positions.moon, 0.15);
+      
+      return earthBetweenSunAndMoon && moonNearEclipticPlane && bodiesAligned;
+    }
+    
+    // 寻找下一次日食的时间
+    function findNextSolarEclipse(currentDays, maxSearchDays = 1000) {
+      let searchDays = currentDays + 1; // 从下一天开始搜索
+      const synodic = 29.53; // 朔望月周期（天）
+      
+      // 首先用大步长快速搜索可能的日食区间
+      for (let i = 0; i < maxSearchDays; i += 7) { // 每7天检查一次
+        searchDays = currentDays + i;
+        const positions = calculateCelestialPositions(searchDays);
+        
+        // 检查月球是否接近交点（可能发生日食的区间）
+        if (positions.moonData.isNearNode) {
+          // 在这个区间内进行精细搜索
+          for (let j = Math.max(0, i - 7); j <= i + 7 && j < maxSearchDays; j++) {
+            const testDay = currentDays + j;
+            const testPositions = calculateCelestialPositions(testDay);
+            
+            if (isSolarEclipse(testPositions)) {
+              // 找到日食后，进行精确搜索
+              return refineEclipseTime(testDay, true);
+            }
+          }
+        }
+      }
+      
+      return null; // 未找到
+    }
+    
+    // 寻找下一次月食的时间
+    function findNextLunarEclipse(currentDays, maxSearchDays = 1000) {
+      let searchDays = currentDays + 1; // 从下一天开始搜索
+      const synodic = 29.53; // 朔望月周期（天）
+      
+      // 首先用大步长快速搜索可能的月食区间
+      for (let i = 0; i < maxSearchDays; i += 7) { // 每7天检查一次
+        searchDays = currentDays + i;
+        const positions = calculateCelestialPositions(searchDays);
+        
+        // 检查月球是否接近交点（可能发生月食的区间）
+        if (positions.moonData.isNearNode) {
+          // 在这个区间内进行精细搜索
+          for (let j = Math.max(0, i - 7); j <= i + 7 && j < maxSearchDays; j++) {
+            const testDay = currentDays + j;
+            const testPositions = calculateCelestialPositions(testDay);
+            
+            if (isLunarEclipse(testPositions)) {
+              // 找到月食后，进行精确搜索
+              return refineEclipseTime(testDay, false);
+            }
+          }
+        }
+      }
+      
+      return null; // 未找到
+    }
+    
+    // 精确定位日食或月食的时间
+    function refineEclipseTime(approximateDays, isSolar) {
+      let bestDay = approximateDays;
+      let bestScore = -1;
+      
+      // 在找到的日期前后搜索，找到最佳对齐时间
+      for (let offset = -2; offset <= 2; offset += 0.1) {
+        const testDay = approximateDays + offset;
+        const positions = calculateCelestialPositions(testDay);
+        
+        // 计算对齐程度（越接近共线，分数越高）
+        let score = 0;
+        if (isSolar && isSolarEclipse(positions)) {
+          score = 1 - Math.abs(positions.moonEclipticLatitude);
+        } else if (!isSolar && isLunarEclipse(positions)) {
+          score = 1 - Math.abs(positions.moonEclipticLatitude);
+        }
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestDay = testDay;
+        }
+      }
+      
+      return bestDay;
+    }
+    
+    // 跳转到下一次日食
+    function jumpToNextSolarEclipse() {
+      console.log('正在搜索下一次日食...');
+      
+      // 显示加载提示
+      const button = document.getElementById('nextSolarEclipse');
+      const originalText = button.textContent;
+      button.textContent = '搜索中...';
+      button.disabled = true;
+      
+      // 使用 setTimeout 让UI有时间更新
+      setTimeout(() => {
+        const nextEclipseDay = findNextSolarEclipse(days, 2000); // 搜索接下来2000天内
+        
+        if (nextEclipseDay !== null) {
+          stepSimulation(nextEclipseDay, true);
+          console.log('跳转到下一次日食：', dateCurrent.toLocaleDateString());
+          
+          // 显示成功消息
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipseDay * 24 * 60 * 60 * 1000);
+          const moonData = calculateMoonNodePosition(nextEclipseDay);
+          alert(`找到下一次日食！\n日期：${eclipseDate.toLocaleDateString()}\n月球黄纬：${moonData.eclipticLatitude.toFixed(4)}\n月球接近交点：${moonData.isNearNode ? '是' : '否'}\n距离交点：${moonData.minDistanceFromNode.toFixed(4)}`);
+        } else {
+          alert('在接下来的5.5年内未找到日食');
+        }
+        
+        // 恢复按钮
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 100);
+    }
+    
+    // 跳转到下一次月食
+    function jumpToNextLunarEclipse() {
+      console.log('正在搜索下一次月食...');
+      
+      // 显示加载提示
+      const button = document.getElementById('nextLunarEclipse');
+      const originalText = button.textContent;
+      button.textContent = '搜索中...';
+      button.disabled = true;
+      
+      // 使用 setTimeout 让UI有时间更新
+      setTimeout(() => {
+        const nextEclipseDay = findNextLunarEclipse(days, 2000); // 搜索接下来2000天内
+        
+        if (nextEclipseDay !== null) {
+          stepSimulation(nextEclipseDay, true);
+          console.log('跳转到下一次月食：', dateCurrent.toLocaleDateString());
+          
+          // 显示成功消息
+          const eclipseDate = new Date(dateOrigin.getTime() + nextEclipseDay * 24 * 60 * 60 * 1000);
+          const moonData = calculateMoonNodePosition(nextEclipseDay);
+          alert(`找到下一次月食！\n日期：${eclipseDate.toLocaleDateString()}\n月球黄纬：${moonData.eclipticLatitude.toFixed(4)}\n月球接近交点：${moonData.isNearNode ? '是' : '否'}\n距离交点：${moonData.minDistanceFromNode.toFixed(4)}`);
+        } else {
+          alert('在接下来的5.5年内未找到月食');
+        }
+        
+        // 恢复按钮
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 100);
+    }
+    
+    // 实时检测当前是否有日食或月食
+    function checkCurrentEclipse() {
+      const positions = calculateCelestialPositions(days);
+      const solar = isSolarEclipse(positions);
+      const lunar = isLunarEclipse(positions);
+      
+      if (solar) {
+        console.log('当前正在发生日食！');
+      }
+      if (lunar) {
+        console.log('当前正在发生月食！');
+      }
+      
+      return { solar, lunar };
+    }
+    
+    // 可选：在动画循环中实时检测日食月食（可在animate函数中调用）
+    // checkCurrentEclipse();
+    
+    // 测试函数：验证日食月食计算功能
+    function testEclipseCalculations() {
+      console.log('测试日食月食计算功能...');
+      
+      // 测试当前位置
+      const currentPositions = calculateCelestialPositions(days);
+      console.log('当前天体位置：', currentPositions);
+      console.log('当前月球黄纬：', currentPositions.moonEclipticLatitude.toFixed(4));
+      console.log('月球轨道角度：', (currentPositions.moonData.moonOrbitAngle * 180 / Math.PI).toFixed(1), '度');
+      console.log('月球距离交点：', currentPositions.moonData.minDistanceFromNode.toFixed(4));
+      console.log('月球是否接近交点：', currentPositions.moonData.isNearNode);
+      console.log('接近哪个交点：', currentPositions.moonData.nearAscendingNode ? '升交点' : '降交点');
+      console.log('升交点位置：角度90°，降交点位置：角度270°');
+      
+      // 测试是否有当前日食或月食
+      const current = checkCurrentEclipse();
+      if (current.solar || current.lunar) {
+        console.log('当前有日食或月食发生！');
+      } else {
+        console.log('当前没有日食或月食');
+      }
+      
+      // 可以在浏览器控制台调用这个函数进行测试
+      console.log('您可以在控制台中调用 testEclipseCalculations() 来测试功能');
+    }
+    
+    // 初始化时运行一次测试
+    testEclipseCalculations();
+    
   </script>
 </body>
 </html>
