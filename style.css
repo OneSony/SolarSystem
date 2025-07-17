@@ -96,7 +96,7 @@ button {
 	position: fixed;
 	top: 86px;
 	left: 24px;
-	z-index: 1002;
+	z-index: 10;
 	width: 40px;
 	height: 40px;
 	border: none;
@@ -796,7 +796,7 @@ ul {
   position: fixed;
   bottom: 32px;
   right: 32px;
-  z-index: 1002;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1065,3 +1065,157 @@ ul {
   color: #e6ebf5;
 }
 
+#modalMask {
+  display: none;
+  position: fixed;
+  z-index: 20;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  align-items: center;
+  justify-content: center;
+}
+
+#modalMask #helpWindow {
+  position: relative;
+  background: rgba(32,28,22,0.93);
+  border: 1.5px solid #9b7c3e;
+  border-radius: 15px;
+  box-shadow: 0 2px 16px 0 rgba(50,40,20,.18);
+  width: 700px;
+  max-width: 90vw;
+  min-height: 480px;
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#modalMask #helpWindow #closeWindowBtn {
+  position: absolute;
+  top: 18px;
+  right: 28px;
+  font-size: 2rem;
+  color: #aaaaaa;
+  cursor: pointer;
+  z-index: 2;
+  user-select: none;
+  transition: color 0.17s;
+}
+
+#modalMask #helpWindow #closeWindowBtn:hover {
+  color: #ffffff;
+}
+
+#modalMask #helpWindow #helpBody {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  padding: 36px 12px 8px 12px;
+  flex: 1;
+  min-height: 320px;
+}
+
+#modalMask #helpWindow #helpBody #prevPageBtn,
+#modalMask #helpWindow #helpBody #nextPageBtn {
+  background: none;
+  border: none;
+  display: inline-block;
+  color: #aaaaaa;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 2.6rem;
+  font-weight: 300;
+  line-height: 3rem;
+  width: 56px;
+  cursor: pointer;
+  align-self: center;
+  user-select: none;
+  transition: color .16s;
+  margin: 0 6px;
+  padding: 0;
+  -webkit-transition: color .16s;
+  -moz-transition: color .16s;
+  -ms-transition: color .16s;
+  -o-transition: color .16s;
+  transform: scaleY(3.6);
+  -webkit-transform: scaleY(3.6);
+  -moz-transform: scaleY(3.6);
+  -ms-transform: scaleY(3.6);
+  -o-transform: scaleY(3.6);
+}
+
+#modalMask #helpWindow #helpBody #prevPageBtn:hover,
+#modalMask #helpWindow #helpBody #nextPageBtn:hover {
+  color: #ffffff;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer {
+	width: 90%;
+	overflow-x: hidden;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer #helpPages {
+  display: flex;
+  flex-direction: row;
+  width: 600%;
+  transform: translate(0%);
+  -webkit-transform: translate(0%);
+  -moz-transform: translate(0%);
+  -ms-transform: translate(0%);
+  -o-transform: translate(0%);
+  transition: transform 0.3s ease-in-out;
+  -webkit-transition: transform 0.3s ease-in-out;
+  -moz-transition: transform 0.3s ease-in-out;
+  -ms-transition: transform 0.3s ease-in-out;
+  -o-transition: transform 0.3s ease-in-out;
+}
+
+#modalMask #helpWindow #helpBody #pagesContainer .helpPage {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#modalMask #helpWindow #pageSwitcher ul {
+	margin: 10px 0 20px 0;
+    display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	width: 200px;
+}
+
+#modalMask #helpWindow #pageSwitcher ul .dot {
+	flex: 1;
+	border: none;
+	background-color: #969696;
+	display: inline-block;
+	width: 10px;
+	height: 8px;
+	border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	-ms-border-radius: 4px;
+	-o-border-radius: 4px;
+	transition: background-color 0.2s, width 0.2s;
+	-webkit-transition: background-color 0.2s, width 0.2s;
+	-moz-transition: background-color 0.2s, width 0.2s;
+	-ms-transition: background-color 0.2s, width 0.2s;
+	-o-transition: background-color 0.2s, width 0.2s;
+}
+
+#modalMask #helpWindow #pageSwitcher ul .dot:hover {
+	background-color: #eeeeee;
+	cursor: pointer;
+}
+
+#modalMask #helpWindow #pageSwitcher ul .dot.active {
+	background-color: #c9a35c;
+	width: 14px;
+	height: 8px;
+	border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	-ms-border-radius: 5px;
+	-o-border-radius: 5px;
+}

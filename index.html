@@ -78,7 +78,7 @@
           </h4>
           <ul>
             <li>
-              <input type="radio" name="view" id="top-view" value="top-view" checked hidden>
+              <input type="radio" name="view" id="top-view" value="top-view" hidden>
               <label for="top-view" class="view-label">
                 <i class="fa fa-toggle-down"></i>
                 <span>俯视图</span>
@@ -92,7 +92,7 @@
               </label>
             </li>
             <li>
-              <input type="radio" name="view" id="3D-view" value="3D-view" hidden>
+              <input type="radio" name="view" id="3D-view" value="3D-view" checked hidden>
               <label for="3D-view" class="view-label">
                 <i class="fa fa-cube"></i>
                 <span>3D视图</span>
@@ -357,10 +357,58 @@
       <i class="fa fa-camera"></i>
     </button>
     <hr>
-    <button class="tool-btn" id="toolHelp" title="帮助">
+    <button class="tool-btn" id="toolHelp" title="帮助" onclick="clickOnToolHelp()">
       <i class="fa fa-question"></i>
     </button>
   </nav>
+
+  <div id="modalMask" class="modal">
+    <div id="helpWindow">
+      <span id="closeWindowBtn" onclick="closeHelpWindow()">&times;</span>
+      <div id="helpBody">
+        <button id="prevPageBtn">&#60;</button>
+        <div id="pagesContainer">
+        <!-- 每一页内容单独一个div -->
+          <ul id="helpPages">
+            <li id="helpPage0" class="helpPage">
+              <h2>帮助文档</h2>
+              <p></p>
+            </li>
+            <li id="helpPage1" class="helpPage">
+              <h2>界面</h2>
+              <p>占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位</p>
+            </li>
+            <li id="helpPage2" class="helpPage">
+              <h2>视角控制</h2>
+              <p>占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位</p>
+            </li>
+            <li id="helpPage3" class="helpPage">
+              <h2>日月食画中画</h2>
+              <p>占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位</p>
+            </li>
+            <li id="helpPage4" class="helpPage">
+              <h2>速度与日期调节</h2>
+              <p>占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位</p>
+            </li>
+            <li id="helpPage5" class="helpPage">
+              <h2>其他功能</h2>
+              <p>占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位</p>
+            </li>
+          </ul>
+        </div>
+        <button id="nextPageBtn">&#62;</button>
+      </div>
+      <nav id="pageSwitcher">
+        <ul>
+          <li><button class="dot active" onclick="jumpToHelpPage(0)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(1)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(2)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(3)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(4)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(5)"></button></li>
+        </ul>
+      </nav>
+    </div>
 
   <!--------------------------------------------->
   <!------------ 下面是JavaScript代码 ------------>
@@ -400,7 +448,13 @@
     const PIPSwitch = document.getElementById('PIPSwitch');
     const pipLocationText = document.getElementById('pipLocationText');
     const pipMoonPhaseText = document.getElementById('pipMoonPhaseText');
-    
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const helpModal = document.getElementById('modalMask');
+    const helpPages = document.getElementById('helpPages');
+    const pageSwitcherDots = document.querySelectorAll('#pageSwitcher .dot');
+    let currentHelpPage = 0; // 当前帮助页面索引
+
     // 3D月相相关变量
     let pipScene = null;
     let pipCamera = null;
@@ -1283,6 +1337,8 @@
     stopSwitch.addEventListener('change', changeStopSwitch);
     reserveSwitch.addEventListener('change', changeReserveSwitch);
     axisSwitch.addEventListener('change', changeAxisVisibility);
+    prevPageBtn.addEventListener('click', prevHelpPage);
+    nextPageBtn.addEventListener('click', nextHelpPage);
     moonNormalSwitch.addEventListener('change', changeMoonNormalVisibility);
     pipMinimize.addEventListener('click', togglePipMinimize);
     pipClose.addEventListener('click', togglePipVisibility);
@@ -1473,6 +1529,39 @@
       link.href = imgData;
       link.download = 'screenshot.png';
       link.click();
+    }
+
+    //帮助窗口相关响应
+    function clickOnToolHelp() {
+      modalMask.style.display = 'flex';
+      jumpToHelpPage(0);
+    }
+
+    function closeHelpWindow() {
+      modalMask.style.display = 'none';
+    }
+
+    function nextHelpPage() {
+      if(currentHelpPage < 5)
+        jumpToHelpPage(currentHelpPage + 1);
+      else return;
+    }
+
+    function prevHelpPage() {
+      if(currentHelpPage > 0)
+        jumpToHelpPage(currentHelpPage - 1);
+      else return;
+    }
+
+    function jumpToHelpPage(page) {
+      if(page >= 0 && page <= 5) {
+        currentHelpPage = page;
+        helpPages.style.transform = 'translateX(' + (-page * 16.66) + '%)';
+        pageSwitcherDots.forEach((dot) => {
+          dot.classList.remove('active'); 
+        })
+        pageSwitcherDots[page].classList.add('active');
+      }
     }
 
     //日期更新
