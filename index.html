@@ -78,7 +78,7 @@
           </h4>
           <ul>
             <li>
-              <input type="radio" name="view" id="top-view" value="top-view" checked hidden>
+              <input type="radio" name="view" id="top-view" value="top-view" hidden>
               <label for="top-view" class="view-label">
                 <i class="fa fa-toggle-down"></i>
                 <span>俯视图</span>
@@ -92,7 +92,7 @@
               </label>
             </li>
             <li>
-              <input type="radio" name="view" id="3D-view" value="3D-view" hidden>
+              <input type="radio" name="view" id="3D-view" value="3D-view" checked hidden>
               <label for="3D-view" class="view-label">
                 <i class="fa fa-cube"></i>
                 <span>3D视图</span>
@@ -171,30 +171,6 @@
               </li>
             </ul>
           </div>
-          <div id="earthAxis">
-            <h5>地轴显示</h5>
-            <ul>
-              <li>
-                <input type="checkbox" id="axisSwitch" checked hidden>
-                <label for="axisSwitch" class="texture-label">
-                  <i></i>
-                  <span>显示地轴</span>
-                </label>
-              </li>
-            </ul>
-          </div>
-          <div id="moonOrbitNormal">
-            <h5>月球轨道法向量</h5>
-            <ul>
-              <li>
-                <input type="checkbox" id="moonNormalSwitch" checked hidden>
-                <label for="moonNormalSwitch" class="texture-label">
-                  <i></i>
-                  <span>显示轨道法向量</span>
-                </label>
-              </li>
-            </ul>
-          </div>
           <div id="moonNodes">
             <h5>黄白交点</h5>
             <ul>
@@ -207,6 +183,29 @@
               </li>
             </ul>
           </div>
+        </div>
+        <hr>
+        <div class="contorl-block" id="auxiliarySettings">
+          <h4>
+            <span class="zh">辅助显示</span>
+            <span class="en">Auxiliary Information</span>
+          </h4>
+          <ul>
+            <li>
+              <input type="checkbox" id="axisSwitch" checked hidden>
+              <label for="axisSwitch" class="texture-label">
+                <span>显示地轴</span>
+                <i><span>√</span></i>
+              </label>
+            </li>
+            <li>
+              <input type="checkbox" id="moonNormalSwitch" checked hidden>
+              <label for="moonNormalSwitch" class="texture-label">
+                <span>显示轨道法向量</span>
+                <i><span>√</span></i>
+              </label>
+            </li>
+          </ul>
         </div>
         <hr>
         <!-- 控制块：日月食画中画 -->
@@ -233,7 +232,6 @@
             </select>
           </li></ul>
         </div>
-      <p>TODO: 或许有一些其他需要的配置</p>
       </div>
       <!-- 标签页3：参数调整 -->
       <div class="panel" id="page3">
@@ -297,35 +295,23 @@
               <button id="nextTotalLunarEclipse">下一次月全食</button>
               <button id="nextPartialLunarEclipse">下一次月偏食</button>
             </li>
+
           </ul>
         </div>
         <hr>
-        <!-- 控制块：天体尺寸 -->
-        <div class="contorl-block" id="sizeSettings">
+        <!-- 控制块：辅助功能 -->
+        <div class="contorl-block" id="accessibility">
           <h4>
-            <span class="zh">天体尺寸</span>
-            <span class="en">Celestial size</span>
+            <span class="zh">辅助功能</span>
+            <span class="en">Accessibility</span>
           </h4>
           <ul>
             <li>
-              <input type="radio" name="size" id="suitable-size" value="suitable-size" checked hidden>
-              
-              <label for="suitable-size" class="size-label">
-                <i class="fa fa-eye"></i>
-                <span>适宜观察</span>
-              </label>
-            </li>
-            <li>
-              <input type="radio" name="size" id="true-size" value="true-size" hidden>
-              <label for="true-size" class="size-label">
-                <i class="fa fa-bullseye"></i>
-                <span>真实大小</span>
-              </label>
+              <h5>状态分析</h5>
+              <button id="analyzeAlignment" onclick="showAlignmentAnalysis()">分析当前对齐</button>
             </li>
           </ul>
         </div>
-        <hr>
-        <p>TODO: 或许有一些其他需要的配置</p>
       </div>
     </div>
   </aside>
@@ -385,17 +371,116 @@
       <i>x1</i>
     </button>
     <hr>
-    <button class="tool-btn" id="toolView" title="切换视角">
+    <button class="tool-btn" id="toolView" title="切换视角" onclick="clickOnToolView()">
       <i class="fa fa-eye"></i>
     </button>
     <button class="tool-btn" id="toolScreenshot" title="截图" onclick="clickOnToolScreenshot()">
       <i class="fa fa-camera"></i>
     </button>
     <hr>
-    <button class="tool-btn" id="toolHelp" title="帮助">
+    <button class="tool-btn" id="toolHelp" title="帮助" onclick="clickOnToolHelp()">
       <i class="fa fa-question"></i>
     </button>
   </nav>
+
+  <div id="modalMask" class="modal">
+    <div id="helpWindow">
+      <span id="closeWindowBtn" onclick="closeHelpWindow()">&times;</span>
+      <div id="helpBody">
+        <button id="prevPageBtn">&#60;</button>
+        <div id="pagesContainer">
+        <!-- 每一页内容单独一个div -->
+          <ul id="helpPages">
+            <li id="helpPage0" class="helpPage">
+              <h2>帮助文档</h2>
+              <div class="helpContent"> 
+                <p><strong>欢迎来到 “Solar System Sim” 网页</strong>！</p>
+                <p>这是一个基于 Three.js 库打造的日月地运动与日食、月食在线模拟演示工具.</p>
+                <p>
+                  本工具旨在为用户提供一个直观易用的平台，以 3D 视角动态地观察：<br>
+                  &emsp;- 地球、月球和太阳之间的运行轨迹;<br>
+                  &emsp;- 天体的自转、公转、轨道进动等动态关系;<br>
+                  &emsp;- 日食、月食等天象的周期变化.
+                </p>
+                <p>页面提供了尽可能全面的功能和简便易用的操作方式，以期让用户更好的专注于探索和理解天文现象。下面是一个关于如何使用该网页的简要指南</p>
+              </div>
+            </li>
+            <li id="helpPage1" class="helpPage">
+              <h2>界面</h2>
+              <div class="helpContent">
+                <p>Solar System Sim 网页界面主要包含以下部分：</p>
+                <ul>
+                  <li><strong>显示区：</strong>是主要的可视化场景，展现地球、月球和太阳的相对运动及相关天象；</li>
+                  <li><strong>控制面板：</strong>页面左侧边栏，通过按钮呼出或隐藏，提供了基本信息、视图切换、参数调整、辅助工具等内容;</li>
+                  <li><strong>小工具条：</strong>悬浮于页面右下角，集合暂停、速度调节、视角切换、截图、帮助等常用功能；</li>
+                  <li><strong>仪表盘：</strong>位于页面右上角，实时显示当前日期、速度和天象进程等状态，帮助用户把握模拟进程与关键数据;</li>
+                  <li><strong>画中画框：</strong>通过控制面板打开，更详细的展示日月食等天象的2D细节.</li>
+                </ul>
+             </div>
+            </li>
+            <li id="helpPage2" class="helpPage">
+              <h2>视角控制</h2>
+              <div class="helpContent">
+                <p>Solar System Sim 支持三种主要视角：
+                <p>
+                  &emsp;- <strong>正视图：</strong>俯视太阳系平面<br>
+                  &emsp;- <strong>侧视图：</strong>平行于黄道观察<br>
+                  &emsp;- <strong>3D视图：</strong>沉浸式立体模拟
+                </p>
+                </p>
+                <p>用户可以在<strong>控制面板</strong>中的视图页自由选择，也可通过<strong>小工具条</strong>中的控件快速切换.</p>
+                <p>在3D视图下，可以按住左键拖动以旋转视角，滚动滚轮以缩放画面，实时调整相机位置.</p>
+              </div>
+            </li>
+            <li id="helpPage3" class="helpPage">
+              <h2>日月食画中画</h2>
+              <p>占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位</p>
+            </li>
+            <li id="helpPage4" class="helpPage">
+              <h2>速度与日期调节</h2>
+              <!-- 项目支持灵活的速度和时间调节功能。用户可通过控制面板或小工具条上的速度按钮，设定模拟速度（加速、减速、暂停、倒退），便于观察不同时间尺度下的天体运动和天象变化。日期调节方面，系统支持真实日期的显示，并可跳转到指定日期，方便用户回顾历史事件或预测未来天象。用户可以在任意时间点暂停模拟，分析对应的天体位置和状态。所有调节操作均会同步反馈在仪表盘，保证数据准确和操作流畅，满足不同学习和演示需求。 -->
+              <div class="helpContent">
+                <p>Solar System Sim 支持灵活的<strong>速度调节</strong>与<strong>日期跳转</strong>功能.</p>
+                <p>
+                  仪表盘会显示当前日期、速度比例和天象进程等基本状态信息
+                </p>
+                <p>
+                  通过控制面板上的控件，可以方便的调节模拟过程的速度，或进行暂停和倒退（小工具条也提供了暂停和速度调整的快捷按钮）。
+                </p>
+                <p>
+                  同样，可以通过控制面板上的日期选择器跳转到指定日期。或通过快捷选项向前向后快进
+                </p>
+                <p>
+                  无论是想静止分析某一时刻的天体位置，还是连续观察一年间月相变化，都能自由切换。所有操作之间相互兼容，效果实时反馈在显示区和仪表盘，确保数据准确、操作流畅
+                </p>
+              </div>
+            </li>
+            <li id="helpPage5" class="helpPage">
+              <h2>其他功能</h2>
+              <div class="helpContent">
+                <ul>
+                  <li><strong>截图：</strong>在小工具条中，一键保存并下载当前模拟画面</li>
+                  <li><strong>贴图切换：</strong>允许随时为太阳、地球选择不同的外观贴图，或修改宇宙背景</li>
+                  <li><strong>辅助显示：</strong>可以打开自转轴、轨道面法向量等视觉辅助，更精细的观察交角及其变化</li>
+                  <li><strong>状态分析：</strong>在任意时刻分析当前天体的对齐信息，帮助用户理解日食、月食等现象的发生条件</li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <button id="nextPageBtn">&#62;</button>
+      </div>
+      <nav id="pageSwitcher">
+        <ul>
+          <li><button class="dot active" onclick="jumpToHelpPage(0)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(1)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(2)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(3)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(4)"></button></li>
+          <li><button class="dot" onclick="jumpToHelpPage(5)"></button></li>
+        </ul>
+      </nav>
+    </div>
 
   <!--------------------------------------------->
   <!------------ 下面是JavaScript代码 ------------>
@@ -436,7 +521,13 @@
     const PIPSwitch = document.getElementById('PIPSwitch');
     const pipLocationText = document.getElementById('pipLocationText');
     const pipMoonPhaseText = document.getElementById('pipMoonPhaseText');
-    
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const helpModal = document.getElementById('modalMask');
+    const helpPages = document.getElementById('helpPages');
+    const pageSwitcherDots = document.querySelectorAll('#pageSwitcher .dot');
+    let currentHelpPage = 0; // 当前帮助页面索引
+
     // 3D月相相关变量
     let pipScene = null;
     let pipCamera = null;
@@ -511,7 +602,16 @@
     let speedFactor = 1;      //速度因子
     let isPaused = false;     //暂停
     let isbackwards = false;  //倒退
-
+    //视角相关参数
+    let isViewLocked = false; //是否是3D视角
+    let targetAzimuth = 0;     // 水平角
+    let targetElevation = 0;   // 垂直角
+    let targetRadius = 10;    // 距离
+    let startMouseX = 0;
+    let startMouseY = 0;
+    let startAzimuth = 0;
+    let startElevation = 0;
+    let mouseOnPanel = false;
     // 公共变量：场景、相机、渲染器、纹理
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -834,18 +934,37 @@
     const windowHalfY = window.innerHeight / 2;
     
     document.addEventListener('mousedown', (event) => {
-      mouseDragging = true;
-    });
-    
+        mouseDragging = true;
+        startMouseX = event.clientX;
+        startMouseY = event.clientY;
+        startAzimuth = targetAzimuth;
+        startElevation = targetElevation;
+    })
     document.addEventListener('mouseup', (event) => {
       mouseDragging = false;
     });
     
     document.addEventListener('mousemove', (event) => {
-      if(!mouseDragging) return;
-      mouseX = (event.clientX - windowHalfX) * 0.005;
-      mouseY = (event.clientY - windowHalfY) * 0.005;
+        if (!mouseDragging || isViewLocked || mouseOnPanel) return;
+
+        const dx = event.clientX - startMouseX;
+        const dy = event.clientY - startMouseY;
+
+        // 调整灵敏度
+        targetAzimuth = startAzimuth - dx * 0.005;
+        targetElevation = startElevation + dy * 0.005;
+
+        // 限制 elevation（仰角）范围
+        const maxElevation = Math.PI / 2 - 0.01;
+        const minElevation = -Math.PI / 2 + 0.01;
+        targetElevation = Math.max(minElevation, Math.min(maxElevation, targetElevation));
     });
+    document.addEventListener('wheel', (event) => {
+        if(isViewLocked || mouseOnPanel) return;
+        const delta = Math.sign(event.deltaY);
+        targetRadius += delta * 0.5; // 调整缩放灵敏度
+        targetRadius = Math.max(3, Math.min(15, targetRadius)); // 限制缩放范围
+      })
 
     /* * * * * * * * * *
      * 动画更新
@@ -858,15 +977,19 @@
         if(isbackwards) dayDelta = -dayDelta;
         stepSimulation(dayDelta);
       }
-      
-      // 相机控制
-      targetX += (mouseX - targetX) * 0.05;
-      targetY += (mouseY - targetY) * 0.05;
-      camera.position.x = Math.sin(targetX) * 10;
-      camera.position.y = targetY * 10;
-      camera.position.z = Math.cos(targetX) * 10;
-      camera.lookAt(scene.position);
-    
+        // 相机控制
+        if (!isViewLocked) {
+            const r = targetRadius; // 相机半径
+
+            const x = r * Math.cos(targetElevation) * Math.sin(targetAzimuth);
+            const y = r * Math.sin(targetElevation);
+            const z = r * Math.cos(targetElevation) * Math.cos(targetAzimuth);
+
+            camera.position.set(x, y, z);
+            camera.up.set(0, 1, 0);
+            camera.lookAt(scene.position);
+        }
+
       if(!rendererLock)  renderer.render(scene, camera);
     }
     
@@ -2330,6 +2453,12 @@
      * * * * * * * * * * * */
     //事件绑定
     controlBtn.addEventListener('click', switchControlPanel);
+    controlPanel.addEventListener('mouseenter', () => { 
+      mouseOnPanel = true;
+    });
+    controlPanel.addEventListener('mouseleave', () => {
+      mouseOnPanel = false;
+    });
     tabs.forEach(tab => { tab.addEventListener('click', switchTab); });
     earthTextureRadios.forEach(radio => { 
       radio.addEventListener('change', () => {
@@ -2350,6 +2479,8 @@
     stopSwitch.addEventListener('change', changeStopSwitch);
     reserveSwitch.addEventListener('change', changeReserveSwitch);
     axisSwitch.addEventListener('change', changeAxisVisibility);
+    prevPageBtn.addEventListener('click', prevHelpPage);
+    nextPageBtn.addEventListener('click', nextHelpPage);
     moonNormalSwitch.addEventListener('change', changeMoonNormalVisibility);
     pipMinimize.addEventListener('click', togglePipMinimize);
     pipClose.addEventListener('click', togglePipVisibility);
@@ -2576,6 +2707,41 @@
       link.click();
     }
 
+    //帮助窗口相关响应
+    function clickOnToolHelp() {
+      modalMask.style.display = 'flex';
+      jumpToHelpPage(0);
+    }
+
+    function closeHelpWindow() {
+      modalMask.style.display = 'none';
+    }
+
+    function nextHelpPage() {
+      if(currentHelpPage < 5)
+        jumpToHelpPage(currentHelpPage + 1);
+      else return;
+    }
+
+    function prevHelpPage() {
+      if(currentHelpPage > 0)
+        jumpToHelpPage(currentHelpPage - 1);
+      else return;
+    }
+
+    function jumpToHelpPage(page) {
+      if(page >= 0 && page <= 5) {
+        currentHelpPage = page;
+        helpPages.style.transform = 'translateX(' + (-page * 16.66) + '%)';
+        pageSwitcherDots.forEach((dot) => {
+          dot.classList.remove('active'); 
+        })
+        pageSwitcherDots[page].classList.add('active');
+        prevPageBtn.style.opacity = page === 0 ? '0' : '1';
+        nextPageBtn.style.opacity = page === 5 ? '0' : '1';
+      }
+    }
+
     //日期更新
     function updateDate() {
       dashboardDate.innerHTML = dateCurrent.toLocaleString().split(' ')[0];
@@ -2653,7 +2819,58 @@
       }
     }
 
-    // 一些工具函数
+      // 视角切换相关变量与函数
+      const topViewRadio = document.getElementById('top-view');
+      const sideViewRadio = document.getElementById('side-view');
+      const view3DRadio = document.getElementById('3D-view');
+
+      function switchToTopView() {
+          isViewLocked = true;
+          camera.position.set(0, 15, 0);
+          camera.up.set(0, 0, -1);
+          camera.lookAt(scene.position);
+      }
+
+      function switchToSideView() {
+          isViewLocked = true;
+          camera.position.set(15, 0, 0);
+          camera.up.set(0, 1, 0);
+          camera.lookAt(scene.position);
+      }
+
+      function switchTo3DView() {
+          isViewLocked = false;
+      }
+
+      function clickOnToolView(){
+        if (topViewRadio.checked) {
+          switchToSideView();
+          topViewRadio.checked = false;
+          sideViewRadio.checked = true;
+        }
+        else if (sideViewRadio.checked) {
+          switchTo3DView();
+          sideViewRadio.checked = false;
+          view3DRadio.checked = true;
+        }
+        else if (view3DRadio.checked) {
+          switchToTopView();
+          view3DRadio.checked = false;
+          topViewRadio.checked = true;
+        }
+      }
+
+      // 绑定按钮事件
+      topViewRadio.addEventListener('change', () => {
+          if (topViewRadio.checked) switchToTopView();
+      });
+      sideViewRadio.addEventListener('change', () => {
+          if (sideViewRadio.checked) switchToSideView();
+      });
+      view3DRadio.addEventListener('change', () => {
+          if (view3DRadio.checked) switchTo3DView();
+      });
+
     
     /**
      * 计算日地月三天体对齐进度
