@@ -460,10 +460,40 @@
     let currentEclipseInfo = null; // 存储当前日食/月食的类型信息，确保整个过程保持一致
     // 统一的全食/偏食判断标准
     const ECLIPSE_THRESHOLDS = {
-      TOTAL: 0.070,    // 约4度 - 全食阈值（更严格）
+      TOTAL: 0.105,    // 约6度 - 全食阈值（调整为更合理的范围）
       PARTIAL: 0.26,   // 约15度 - 偏食阈值
       ALIGNMENT: 70    // 对齐程度阈值
     };
+
+    /**
+     * 统一的月食/日食类型判断函数
+     * 确保所有地方使用完全相同的标准
+     */
+    function determineEclipseTypeUnified(minDistanceFromNode) {
+      if (minDistanceFromNode < ECLIPSE_THRESHOLDS.TOTAL) {
+        return 'total';
+      } else if (minDistanceFromNode < ECLIPSE_THRESHOLDS.PARTIAL) {
+        return 'partial';
+      } else {
+        return 'none';
+      }
+    }
+
+    /**
+     * 验证跳转后的类型与查找结果是否一致
+     * 确保用户看到的就是他们请求的类型
+     */
+    function validateEclipseTypeConsistency(foundType, targetDay, eclipseKind) {
+      const nodeData = calculateMoonNodePosition(targetDay);
+      const actualType = determineEclipseTypeUnified(nodeData.minDistanceFromNode);
+      
+      if (actualType !== foundType) {
+        console.warn(`类型不一致警告: 查找到${foundType}, 实际验证为${actualType}, 交点距离: ${(nodeData.minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+        console.warn(`强制使用查找结果: ${foundType}`);
+      }
+      
+      return foundType; // 始终返回查找到的类型，确保一致性
+    }
 
     // 公共变量：天体和运动参数
     const frameRate = 60; //动画帧数
@@ -1498,19 +1528,25 @@
             moonRadius = sunRadius * 0.95; // 月球大小适中
           }
         
-        // 绘制月球阴影本体（不透明度基于遮挡强度）
+        // 绘制月球阴影本体 - 只遮挡太阳本体，不遮挡光芒和背景天空
+        ctx.save();
+        
+        // 创建太阳本体的裁剪区域（只遮挡太阳圆盘）
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, sunRadius, 0, 2 * Math.PI);
+        ctx.clip();
+        
+        // 在裁剪区域内绘制月球阴影
         const shadowOpacity = Math.min(0.95, 0.5 + intensity * 0.45);
         ctx.fillStyle = `rgba(0, 0, 0, ${shadowOpacity})`;
         ctx.beginPath();
         ctx.arc(currentX, currentY, moonRadius, 0, 2 * Math.PI);
         ctx.fill();
         
-        // 绘制月球边缘光晕
-        ctx.strokeStyle = `rgba(100, 100, 100, ${0.7 * intensity})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(currentX, currentY, moonRadius, 0, 2 * Math.PI);
-        ctx.stroke();
+        ctx.restore();
+        
+        // 日食时月球本身不可见，不绘制边缘光晕
+        // 月球只在遮挡太阳时才显示阴影效果，在太阳外部不显示任何痕迹
         
                   // 日全食特有的日冕效果（基于遮挡强度）
           if (eclipseType === 'total' && intensity > 0.5 && intensity < 0.95) {
@@ -1644,11 +1680,21 @@
               ctx.arc(centerX, centerY, sunRadius, 0, 2 * Math.PI);
               ctx.fill();
               
-              // 再次绘制月球阴影，形成新月形效果
+              // 再次绘制月球阴影，形成新月形效果 - 只遮挡太阳本体
+              ctx.save();
+              
+              // 创建太阳本体的裁剪区域（只遮挡太阳圆盘）
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, sunRadius, 0, 2 * Math.PI);
+              ctx.clip();
+              
+              // 在裁剪区域内绘制月球阴影
               ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
               ctx.beginPath();
               ctx.arc(currentX, currentY, moonRadius, 0, 2 * Math.PI);
               ctx.fill();
+              
+              ctx.restore();
             }
           }
       }
@@ -1810,7 +1856,14 @@
           penumbraRadius = moonRadius * 1.0;
         }
         
-        // 绘制本影（深色阴影）
+        // 绘制本影（深色阴影）- 只遮挡月球本体，不遮挡光晕和背景星空
+        ctx.save();
+        
+        // 创建月球本体的裁剪区域（只遮挡月球圆盘）
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, moonRadius, 0, 2 * Math.PI);
+        ctx.clip();
+        
         const umbraGradient = ctx.createRadialGradient(
           shadowCurrentX, shadowCurrentY, 0,
           shadowCurrentX, shadowCurrentY, umbraRadius
@@ -1835,7 +1888,7 @@
         ctx.arc(shadowCurrentX, shadowCurrentY, umbraRadius, 0, 2 * Math.PI);
         ctx.fill();
         
-        // 绘制半影（浅色阴影）
+        // 绘制半影（浅色阴影）- 也只在月球区域内
         const penumbraGradient = ctx.createRadialGradient(
           shadowCurrentX, shadowCurrentY, umbraRadius,
           shadowCurrentX, shadowCurrentY, penumbraRadius
@@ -1850,8 +1903,18 @@
         ctx.arc(shadowCurrentX, shadowCurrentY, penumbraRadius, 0, 2 * Math.PI);
         ctx.fill();
         
-        // 月偏食特效：强调月球剩余的明亮部分
-        if (eclipseType === 'partial' && intensity > 0.3) {
+        ctx.restore();
+        
+                  // 月偏食特效：强调月球剩余的明亮部分（在月球本体外绘制光环）
+          if (eclipseType === 'partial' && intensity > 0.3) {
+            ctx.save();
+            
+            // 创建月球本体外的裁剪（反向裁剪，排除月球本体）
+            ctx.beginPath();
+            ctx.rect(0, 0, canvas.width, canvas.height);
+            ctx.arc(centerX, centerY, moonRadius, 0, 2 * Math.PI, true);
+            ctx.clip();
+          
           // 绘制月球未被遮挡部分的增强光芒
           const brightIntensity = (1 - intensity) * 0.4;
           ctx.strokeStyle = `rgba(255, 255, 255, ${brightIntensity})`;
@@ -1868,10 +1931,20 @@
           ctx.beginPath();
           ctx.arc(centerX, centerY - moonRadius * 0.2, moonRadius + 15, 0, Math.PI, true);
           ctx.stroke();
+          
+          ctx.restore();
         }
         
-        // 月全食特效：增强血月效果
-        if (eclipseType === 'total' && intensity > 0.5) {
+                  // 月全食特效：增强血月效果（在月球本体外绘制光环）
+          if (eclipseType === 'total' && intensity > 0.5) {
+            ctx.save();
+            
+            // 创建月球本体外的裁剪（反向裁剪，排除月球本体）
+            ctx.beginPath();
+            ctx.rect(0, 0, canvas.width, canvas.height);
+            ctx.arc(centerX, centerY, moonRadius, 0, 2 * Math.PI, true);
+            ctx.clip();
+          
           const bloodMoonIntensity = intensity * 0.3;
           
           // 绘制红色光晕
@@ -1887,17 +1960,29 @@
           ctx.beginPath();
           ctx.arc(centerX, centerY, moonRadius + 20, 0, 2 * Math.PI);
           ctx.stroke();
+          
+          ctx.restore();
         }
       }
 
-      // 绘制月球光晕（基于遮挡强度）
-      if (intensity < 0.8) {
+              // 绘制月球光晕（基于遮挡强度）- 只在月球本体外显示
+        if (intensity < 0.8) {
+          ctx.save();
+          
+          // 创建月球本体外的裁剪（反向裁剪，排除月球本体）
+          ctx.beginPath();
+          ctx.rect(0, 0, canvas.width, canvas.height);
+          ctx.arc(centerX, centerY, moonRadius, 0, 2 * Math.PI, true);
+          ctx.clip();
+        
         const haloIntensity = 1 - intensity;
         ctx.strokeStyle = `rgba(255, 255, 255, ${haloIntensity * 0.3})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(centerX, centerY, moonRadius + 10, 0, 2 * Math.PI);
         ctx.stroke();
+        
+        ctx.restore();
       }
 
       // 绘制进度文字
@@ -1977,14 +2062,11 @@
       if (bestAlignment > 70) {
         // 根据食甚时刻的交点距离确定类型（只在这里确定一次）
         // 这个判断基于食甚时刻的天文条件，整个过程保持不变
-        if (bestNodeDistance < ECLIPSE_THRESHOLDS.TOTAL) {
-          bestEclipseType = 'total';
-        } else {
-          bestEclipseType = 'partial';
-        }
+        bestEclipseType = determineEclipseTypeUnified(bestNodeDistance);
         
         console.log(`确定${bestEclipseKind === 'solar' ? '日食' : '月食'}类型: ${bestEclipseType === 'total' ? '全食' : '偏食'}, 食甚时刻: ${bestDay.toFixed(2)}天, 最佳对齐: ${bestAlignment.toFixed(1)}%, 交点距离: ${(bestNodeDistance * 180 / Math.PI).toFixed(1)}°`);
         console.log(`使用统一标准 - 全食阈值: ${(ECLIPSE_THRESHOLDS.TOTAL * 180 / Math.PI).toFixed(1)}°, 偏食阈值: ${(ECLIPSE_THRESHOLDS.PARTIAL * 180 / Math.PI).toFixed(1)}°, 对齐阈值: ${ECLIPSE_THRESHOLDS.ALIGNMENT}%`);
+        console.log(`类型判断依据: 交点距离 ${(bestNodeDistance * 180 / Math.PI).toFixed(1)}° ${bestNodeDistance < ECLIPSE_THRESHOLDS.TOTAL ? '<' : '>='} 全食阈值 ${(ECLIPSE_THRESHOLDS.TOTAL * 180 / Math.PI).toFixed(1)}° → ${bestEclipseType === 'total' ? '全食' : '偏食'}`);
         
         return {
           isEclipse: true,
@@ -2033,26 +2115,22 @@
           eclipseKind = 'solar';
           
           // 检查是否需要重新确定日食类型
-          // 只有在以下情况才重新确定：1）没有类型信息 2）不在日食模式 3）距离上次食甚超过5天
-          // 增加时间容忍度，避免在用户手动跳转后立即重新判断
+          // 如果是用户手动跳转的，绝不重新计算类型
+          const isUserJumped = currentEclipseInfo && currentEclipseInfo.userJumped;
           const needsNewType = !currentEclipseInfo || 
-                               currentEclipseInfo.kind !== 'solar' || 
-                               !isEclipseMode ||
-                               Math.abs(days - currentEclipseInfo.bestDay) > 5;
+                               (currentEclipseInfo.kind !== 'solar' && !isUserJumped);
           
-          if (needsNewType) {
+          if (needsNewType && !isUserJumped) {
             console.log('重新确定日食类型，原因：', {
               noInfo: !currentEclipseInfo,
               wrongKind: currentEclipseInfo && currentEclipseInfo.kind !== 'solar',
-              notInMode: !isEclipseMode,
-              tooFar: currentEclipseInfo && Math.abs(days - currentEclipseInfo.bestDay) > 5,
               currentDay: days,
               bestDay: currentEclipseInfo ? currentEclipseInfo.bestDay : 'none'
             });
             currentEclipseInfo = determineEclipseType(days);
             console.log('确定日食类型：', currentEclipseInfo);
           } else {
-            console.log('使用已存在的日食类型信息：', currentEclipseInfo.type);
+            console.log('使用已存在的日食类型信息：', currentEclipseInfo.type, isUserJumped ? '(用户手动跳转，禁止重新计算)' : '');
           }
           
           // 使用预先确定的日食类型（整个过程保持不变）
@@ -2092,26 +2170,22 @@
           eclipseKind = 'lunar';
           
           // 检查是否需要重新确定月食类型
-          // 只有在以下情况才重新确定：1）没有类型信息 2）不在月食模式 3）距离上次食甚超过5天
-          // 增加时间容忍度，避免在用户手动跳转后立即重新判断
+          // 如果是用户手动跳转的，绝不重新计算类型
+          const isUserJumped = currentEclipseInfo && currentEclipseInfo.userJumped;
           const needsNewType = !currentEclipseInfo || 
-                               currentEclipseInfo.kind !== 'lunar' || 
-                               !isEclipseMode ||
-                               Math.abs(days - currentEclipseInfo.bestDay) > 5;
+                               (currentEclipseInfo.kind !== 'lunar' && !isUserJumped);
           
-          if (needsNewType) {
+          if (needsNewType && !isUserJumped) {
             console.log('重新确定月食类型，原因：', {
               noInfo: !currentEclipseInfo,
               wrongKind: currentEclipseInfo && currentEclipseInfo.kind !== 'lunar',
-              notInMode: !isEclipseMode,
-              tooFar: currentEclipseInfo && Math.abs(days - currentEclipseInfo.bestDay) > 5,
               currentDay: days,
               bestDay: currentEclipseInfo ? currentEclipseInfo.bestDay : 'none'
             });
             currentEclipseInfo = determineEclipseType(days);
             console.log('确定月食类型：', currentEclipseInfo);
           } else {
-            console.log('使用已存在的月食类型信息：', currentEclipseInfo.type);
+            console.log('使用已存在的月食类型信息：', currentEclipseInfo.type, isUserJumped ? '(用户手动跳转，禁止重新计算)' : '');
           }
           
           // 使用预先确定的月食类型（整个过程保持不变）
@@ -3099,16 +3173,8 @@
       const minDistanceFromNode = Math.min(distFromAscending, distFromDescending);
       
       // 判断食相类型（使用统一标准）
-      let eclipseType = 'none';
-      let isNearNode = false;
-      
-      if (minDistanceFromNode < ECLIPSE_THRESHOLDS.TOTAL) {
-        eclipseType = 'total';
-        isNearNode = true;
-      } else if (minDistanceFromNode < ECLIPSE_THRESHOLDS.PARTIAL) {
-        eclipseType = 'partial';
-        isNearNode = true;
-      }
+      const eclipseType = determineEclipseTypeUnified(minDistanceFromNode);
+      const isNearNode = eclipseType !== 'none';
       
       // 计算月球的黄纬（基于轨道倾斜5.15度）
       // 由于交点位置调整到π/2和3π/2，黄纬计算公式需要相应调整
@@ -3179,11 +3245,19 @@
           
           // 根据参数判断食相类型
           if (eclipseType === 'any' && nodeData.isNearNode) {
+            console.log(`找到月食: 第${testDay.toFixed(2)}天, 类型: ${nodeData.eclipseType}, 交点距离: ${(nodeData.minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
             return { day: testDay, type: nodeData.eclipseType };
           } else if (eclipseType === 'total' && nodeData.eclipseType === 'total') {
+            console.log(`找到月全食: 第${testDay.toFixed(2)}天, 交点距离: ${(nodeData.minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
             return { day: testDay, type: 'total' };
           } else if (eclipseType === 'partial' && nodeData.eclipseType === 'partial') {
+            console.log(`找到月偏食: 第${testDay.toFixed(2)}天, 交点距离: ${(nodeData.minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
             return { day: testDay, type: 'partial' };
+          }
+          
+          // 调试信息：显示被跳过的候选
+          if (eclipseType === 'total' && nodeData.eclipseType === 'partial') {
+            console.log(`跳过月偏食候选: 第${testDay.toFixed(2)}天, 交点距离: ${(nodeData.minDistanceFromNode * 180 / Math.PI).toFixed(1)}°, 需要全食`);
           }
         }
       }
@@ -3210,14 +3284,19 @@
           const targetDay = nextEclipse.day - 2.5;
           stepSimulation(targetDay, true);
           
-          // 强制设置日食类型信息，确保类型一致性
+          // 清除之前的类型信息，避免干扰
+          currentEclipseInfo = null;
+          
+          // 验证并强制设置日食类型信息，确保类型一致性
+          const validatedType = validateEclipseTypeConsistency(nextEclipse.type, nextEclipse.day, 'solar');
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'solar',
-            type: nextEclipse.type, // 使用查找到的确切类型
+            type: validatedType, // 使用验证后的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
-            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode
+            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
+            userJumped: true // 标记为用户手动跳转，不允许重新计算
           };
           
           console.log('跳转到下一次日食前2.5天：', dateCurrent.toLocaleDateString());
@@ -3262,14 +3341,19 @@
           const targetDay = nextEclipse.day - 2.5;
           stepSimulation(targetDay, true);
           
-          // 强制设置月食类型信息，确保类型一致性
+          // 清除之前的类型信息，避免干扰
+          currentEclipseInfo = null;
+          
+          // 验证并强制设置月食类型信息，确保类型一致性
+          const validatedType = validateEclipseTypeConsistency(nextEclipse.type, nextEclipse.day, 'lunar');
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: nextEclipse.type, // 使用查找到的确切类型
+            type: validatedType, // 使用验证后的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
-            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode
+            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
+            userJumped: true // 标记为用户手动跳转，不允许重新计算
           };
           
           console.log('跳转到下一次月食前2.5天：', dateCurrent.toLocaleDateString());
@@ -3312,6 +3396,9 @@
           const targetDay = nextEclipse.day - 2.5;
           stepSimulation(targetDay, true);
           
+          // 清除之前的类型信息，避免干扰
+          currentEclipseInfo = null;
+          
           // 强制设置日食类型信息，确保类型一致性
           currentEclipseInfo = {
             isEclipse: true,
@@ -3319,7 +3406,8 @@
             type: 'total', // 强制设为全食
             bestDay: nextEclipse.day,
             bestAlignment: 100,
-            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode
+            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
+            userJumped: true // 标记为用户手动跳转，不允许重新计算
           };
           
           console.log('跳转到下一次日全食前2.5天：', dateCurrent.toLocaleDateString());
@@ -3356,6 +3444,9 @@
           const targetDay = nextEclipse.day - 2.5;
           stepSimulation(targetDay, true);
           
+          // 清除之前的类型信息，避免干扰
+          currentEclipseInfo = null;
+          
           // 强制设置日食类型信息，确保类型一致性
           currentEclipseInfo = {
             isEclipse: true,
@@ -3363,7 +3454,8 @@
             type: 'partial', // 强制设为偏食
             bestDay: nextEclipse.day,
             bestAlignment: 100,
-            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode
+            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
+            userJumped: true // 标记为用户手动跳转，不允许重新计算
           };
           
           console.log('跳转到下一次日偏食前2.5天：', dateCurrent.toLocaleDateString());
@@ -3400,14 +3492,19 @@
           const targetDay = nextEclipse.day - 2.5;
           stepSimulation(targetDay, true);
           
-          // 强制设置月食类型信息，确保类型一致性
+          // 清除之前的类型信息，避免干扰
+          currentEclipseInfo = null;
+          
+          // 验证并强制设置月食类型信息，确保类型一致性
+          const validatedType = validateEclipseTypeConsistency('total', nextEclipse.day, 'lunar');
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: 'total', // 强制设为全食
+            type: validatedType, // 使用验证后的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
-            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode
+            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
+            userJumped: true // 标记为用户手动跳转，不允许重新计算
           };
           
           console.log('跳转到下一次月全食前2.5天：', dateCurrent.toLocaleDateString());
@@ -3444,14 +3541,19 @@
           const targetDay = nextEclipse.day - 2.5;
           stepSimulation(targetDay, true);
           
-          // 强制设置月食类型信息，确保类型一致性
+          // 清除之前的类型信息，避免干扰
+          currentEclipseInfo = null;
+          
+          // 验证并强制设置月食类型信息，确保类型一致性
+          const validatedType = validateEclipseTypeConsistency('partial', nextEclipse.day, 'lunar');
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: 'partial', // 强制设为偏食
+            type: validatedType, // 使用验证后的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
-            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode
+            nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
+            userJumped: true // 标记为用户手动跳转，不允许重新计算
           };
           
           console.log('跳转到下一次月偏食前2.5天：', dateCurrent.toLocaleDateString());
