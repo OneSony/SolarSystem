@@ -235,16 +235,6 @@
               <i></i>
             </label>
           </li></ul>
-          <ul><li>
-            <label for="latitudePos">在地球上观测的地点</label>
-            <select id="latitudePos" name="latitudePos">
-              <option value="90">北极附近</option>
-              <option value="45">北半球</option>
-              <option value="0" selected>赤道</option>
-              <option value="-45">南半球</option>
-              <option value="-90">南极附近</option>
-            </select>
-          </li></ul>
         </div>
       </div>
       <!-- 标签页3：参数调整 -->
@@ -329,28 +319,8 @@
       <div id="pipCanvas">
         <!-- 3D月相渲染容器 -->
         <div id="moonPhase3D"></div>
-        <div class="pip-overlay">
-          <div class="pip-info-text">
-            <span id="pipLocationText">赤道观测</span>
-            <span id="pipMoonPhaseText">新月</span>
-          </div>
-        </div>
       </div>
       <div id="pipInfo">
-        <div class="pip-status">
-          <span class="status-label">状态</span>
-          <span class="status-value" id="pipStatus">待机中</span>
-        </div>
-        <div class="pip-location">
-          <span class="location-label">观测点</span>
-          <select id="pipLocationSelect">
-            <option value="90">北极附近</option>
-            <option value="45">北半球</option>
-            <option value="0" selected>赤道</option>
-            <option value="-45">南半球</option>
-            <option value="-90">南极附近</option>
-          </select>
-        </div>
         <div class="pip-moon-distance">
           <span class="distance-label">月球距离</span>
           <select id="pipMoonDistanceSelect">
@@ -438,7 +408,7 @@
               <div class="helpContent">
                 <p>Solar System Sim 提供了画中画功能，用于更清晰的展示<strong>月相变化、日食和月食</strong>的发生过程.</p>
                 <p>主显示区的模拟已经表现了真实的天体自转、公转比例，考虑了白道随沙罗周期的进动，渲染了正确的光影投射关系.</p>
-                <p>通过控制面板中的开关可以打开画中画小窗口，其中将同步主显示区月相盈亏、和日月食状态（涵盖全食、偏食、环食），更进一步的展示在地球上观测的投影及光线变化，并辅以文字说明，从而帮助用户理解这些复杂现象的形成机制.</p>
+                <p>通过控制面板中的开关可以打开画中画小窗口，其中将同步主显示区月相盈亏、和日月食状态（涵盖全食、偏食、环食），更进一步的展示光线变化和阴影遮挡效果。画中画还提供月球距离调节功能，可以选择近地点、远地点或平均距离，动态展示不同距离下的日全食和日环食效果，从而帮助用户理解这些复杂现象的形成机制.</p>
                 <p>考虑到日月食天象频次小、时间短，为了方便观察，在控制面板参数页也提供了快速跳转到指定天象的功能。</p>
               </div>
             </li>
@@ -515,11 +485,7 @@
     const pipContainer = document.getElementById('pipContainer');
     const pipMinimize = document.getElementById('pipMinimize');
     const pipClose = document.getElementById('pipClose');
-    const pipLocationSelect = document.getElementById('pipLocationSelect');
-    const pipStatus = document.getElementById('pipStatus');
     const PIPSwitch = document.getElementById('PIPSwitch');
-    const pipLocationText = document.getElementById('pipLocationText');
-    const pipMoonPhaseText = document.getElementById('pipMoonPhaseText');
     const prevPageBtn = document.getElementById('prevPageBtn');
     const nextPageBtn = document.getElementById('nextPageBtn');
     const helpModal = document.getElementById('modalMask');
@@ -1325,10 +1291,6 @@
       // 月球潮汐锁定 - 完全静止，不自转
       pip3DMoon.rotation.set(0, 0, 0);
       
-      // 根据观测纬度调整相机Y位置（仰角）
-      const latitude = parseFloat(pipLocationSelect.value) || 0;
-      const latitudeOffset = Math.sin(latitude * Math.PI / 180) * 0.5;
-      pipCamera.position.y = latitudeOffset;
       pipCamera.lookAt(0, 0, 0);
     }
 
@@ -1389,11 +1351,6 @@
       // 月球始终以同一面朝向观察者（地球）
       pip3DMoon.rotation.set(0, 0, 0);
       
-      // 根据观测纬度调整相机Y位置（仰角）
-      const latitude = parseFloat(pipLocationSelect.value) || 0;
-      const latitudeOffset = Math.sin(latitude * Math.PI / 180) * 0.5;
-      const targetCameraY = latitudeOffset;
-      pipCamera.position.y += (targetCameraY - pipCamera.position.y) * 0.1;
       pipCamera.lookAt(0, 0, 0);
     }
     
@@ -2524,25 +2481,13 @@
     moonNormalSwitch.addEventListener('change', changeMoonNormalVisibility);
     pipMinimize.addEventListener('click', togglePipMinimize);
     pipClose.addEventListener('click', togglePipVisibility);
-    pipLocationSelect.addEventListener('change', changePipLocation);
-    
+
     // 月球距离选择器事件监听
     const pipMoonDistanceSelect = document.getElementById('pipMoonDistanceSelect');
     if (pipMoonDistanceSelect) {
       pipMoonDistanceSelect.addEventListener('change', function() {
         // 当月球距离设置改变时，重新渲染日食画面
         if (isPipVisible) {
-          updateMoonPhaseDisplay();
-        }
-      });
-    }
-    
-    // 主控制面板位置选择器同步
-    const mainLocationSelect = document.getElementById('latitudePos');
-    if (mainLocationSelect) {
-      mainLocationSelect.addEventListener('change', function() {
-        if (isPipVisible) {
-          pipLocationSelect.value = mainLocationSelect.value;
           updateMoonPhaseDisplay();
         }
       });
@@ -2793,8 +2738,6 @@
       // 计算并显示月相状态
       updateMoonPhaseDisplay();
       
-      // 更新画中画状态
-      updatePipStatus();
     }
 
     //画中画最小化切换
@@ -2823,38 +2766,6 @@
         cleanup3DMoonPhase();
         cleanup2DEclipse();
         isEclipseMode = false;
-      }
-    }
-
-    //改变画中画观测位置
-    function changePipLocation() {
-      const latitude = pipLocationSelect.value;
-      // 同步更新控制面板中的位置选择器
-      const mainLocationSelect = document.getElementById('latitudePos');
-      if (mainLocationSelect) {
-        mainLocationSelect.value = latitude;
-      }
-      
-      // 更新画中画显示的位置信息
-      updateMoonPhaseDisplay();
-    }
-
-    //更新画中画状态
-    function updatePipStatus() {
-      if (isPaused) {
-        pipStatus.innerHTML = '已暂停';
-        return;
-      }
-      
-      // 使用精确的对齐计算
-      const syzygyData = calculateSyzygyProgress();
-      
-              if (syzygyData.progress > ECLIPSE_THRESHOLDS.ALIGNMENT + 25) { // 95% 对齐度阈值
-        pipStatus.innerHTML = `${syzygyData.type} (${syzygyData.progress.toFixed(1)}%)`;
-      } else if (syzygyData.progress > 80) {
-        pipStatus.innerHTML = `接近${syzygyData.type} (${syzygyData.progress.toFixed(1)}%)`;
-      } else {
-        pipStatus.innerHTML = `${syzygyData.type} (${syzygyData.progress.toFixed(1)}%)`;
       }
     }
 
@@ -3311,12 +3222,6 @@
       
       // 根据当前模式更新显示
       if (isEclipseMode) {
-        // 2D模式：更新文字信息
-        if (pipMoonPhaseText) {
-          const eclipseTypeText = eclipseData.type === 'total' ? '全食' : '偏食';
-          const progressValue = typeof eclipseData.progress === 'object' ? eclipseData.progress.combined : eclipseData.progress;
-          pipMoonPhaseText.textContent = `${eclipseData.kind === 'solar' ? '日' : '月'}${eclipseTypeText} ${(progressValue * 100).toFixed(1)}%`;
-        }
         
         // 2D动画会在自己的循环中更新
         
@@ -3328,18 +3233,9 @@
         
         // 直接更新3D月相，不使用平滑过渡以确保完全同步
         update3DMoonPhaseSync(moonRelativeAngle, illumination);
-        
-        // 更新文字信息
-        if (pipMoonPhaseText) {
-          pipMoonPhaseText.textContent = syzygyData.type;
-        }
+  
       }
       
-      // 更新观测位置信息（两种模式都需要）
-      if (pipLocationText) {
-        const location = getLocationName(pipLocationSelect.value);
-        pipLocationText.textContent = location + '观测';
-      }
     }
     
     /**
@@ -3385,21 +3281,6 @@
       const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
       return t * t * (3 - 2 * t);
     }
-    
-    /**
-     * 获取观测位置名称
-     */
-    function getLocationName(value) {
-      const locations = {
-        '90': '北极',
-        '45': '北半球',
-        '0': '赤道',
-        '-45': '南半球',
-        '-90': '南极'
-      };
-      return locations[value] || '未知';
-    }
-
     
     /* * * * * * * * * * * * * * * * * * * * * * * * *
      * 日食和月食判断功能
