@@ -16,11 +16,6 @@
   <!------ 仪表盘区域 ------>
   <div id="dashboard">
     <div class="dashboard-item">
-      <span class="db-label">当前日期</span>
-      <span class="db-value" id="db-date">2000-1-1</span>
-    </div>
-    <div class="dashboard-divider"></div>
-    <div class="dashboard-item">
       <span class="db-label">速度比例</span>
       <span class="db-value" id="db-speed">1d/s</span>
     </div>
@@ -171,18 +166,6 @@
               </li>
             </ul>
           </div>
-          <div id="moonNodes">
-            <h5>黄白交点</h5>
-            <ul>
-              <li>
-                <input type="checkbox" id="moonNodesSwitch" checked hidden>
-                <label for="moonNodesSwitch" class="texture-label">
-                  <i></i>
-                  <span>显示黄白交点</span>
-                </label>
-              </li>
-            </ul>
-          </div>
         </div>
         <hr>
         <div class="contorl-block" id="auxiliarySettings">
@@ -204,6 +187,13 @@
                 <span>显示轨道法向量</span>
                 <i><span>√</span></i>
               </label>
+            </li>
+            <li>
+                <input type="checkbox" id="moonNodesSwitch" checked hidden>
+                <label for="moonNodesSwitch" class="texture-label">
+                  <span>显示黄白交点</span>
+                  <i><span>√</span></i>
+                </label>
             </li>
           </ul>
         </div>
@@ -267,16 +257,10 @@
         <!-- 控制块：时间控制 -->
         <div class="contorl-block" id="timeSettings">
           <h4>
-            <span class="zh">时间控制</span>
-            <span class="en">Time Control</span>
+            <span class="zh">快捷跳转</span>
+            <span class="en">Quick Jump</span>
           </h4>
-          <ul><li>
-            <h5>日期跳转</h5>
-            <input type="date" id="dateInput">
-            <button id="dateSubmit" onclick="onClickDateSubmit()"><i class="fa fa-check"></i></button>
-          </li></ul>
           <ul>
-            <h5>快捷选择</h5>
             <li>
               <button id="oneYearAgo" onclick="dateJumpBy(-365)">-1年</button>
               <button id="oneMonthAgo" onclick="dateJumpBy(-30)">-1月</button>
@@ -289,26 +273,11 @@
             </li>
             <li>
               <button id="nextTotalSolarEclipse">下一次日全食</button>
-              <button id="nextPartialSolarEclipse">下一次日偏食</button>
-            </li>
-            <li>
               <button id="nextTotalLunarEclipse">下一次月全食</button>
-              <button id="nextPartialLunarEclipse">下一次月偏食</button>
             </li>
-
-          </ul>
-        </div>
-        <hr>
-        <!-- 控制块：辅助功能 -->
-        <div class="contorl-block" id="accessibility">
-          <h4>
-            <span class="zh">辅助功能</span>
-            <span class="en">Accessibility</span>
-          </h4>
-          <ul>
             <li>
-              <h5>状态分析</h5>
-              <button id="analyzeAlignment" onclick="showAlignmentAnalysis()">分析当前对齐</button>
+              <button id="nextPartialSolarEclipse">下一次日偏食</button>
+              <button id="nextPartialLunarEclipse">下一次月偏食</button>
             </li>
           </ul>
         </div>
@@ -505,8 +474,6 @@
     const speedLabel = document.getElementById('speedLabel');
     const reserveSwitch = document.getElementById('reserveSwitch');
     const stopSwitch = document.getElementById('stopSwitch');
-    const dateInput = document.getElementById('dateInput');
-    const dashboardDate = document.getElementById('db-date');
     const dashboardSpeed = document.getElementById('db-speed');
     const dashboardSaros = document.getElementById('db-saros');
     const dashboardMoonPhase = document.getElementById('db-moonphase');
@@ -2475,7 +2442,6 @@
         if (radio.checked) changeStarland(radio.value);
       }); 
     });
-    speedInput.addEventListener('input', changeSpeedFactor);
     stopSwitch.addEventListener('change', changeStopSwitch);
     reserveSwitch.addEventListener('change', changeReserveSwitch);
     axisSwitch.addEventListener('change', changeAxisVisibility);
@@ -2666,16 +2632,6 @@
       stepSimulation(dayDelta);
     }
 
-    //日期跳转To
-    function onClickDateSubmit(){
-      var dayValue = dateInput.value;
-      if (dayValue == '') return;
-      var dateTarget = new Date(dayValue);
-      var dayDelta = (dateTarget.getTime() - dateOrigin.getTime()) / (1000 * 60 * 60 * 24);
-      if(Math.abs(dayDelta-days) < 1) return;
-      stepSimulation(dayDelta, true);
-    }
-
     //小工具条：暂停
     function clickOnToolPause() {
       stopSwitch.checked = !stopSwitch.checked;
@@ -2744,8 +2700,6 @@
 
     //日期更新
     function updateDate() {
-      dashboardDate.innerHTML = dateCurrent.toLocaleString().split(' ')[0];
-      
       // 计算沙罗周期进度
       var sarosProgress = ((days % sarosCurrent) / sarosCurrent * 100);
       if(sarosProgress < 0) sarosProgress = 100 + sarosProgress;

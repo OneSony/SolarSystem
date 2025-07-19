@@ -737,7 +737,11 @@ ul {
 }
 
 #controlPanel #panels .panel #timeSettings button#nextSolarEclipse,
-#controlPanel #panels .panel #timeSettings button#nextLunarEclipse {
+#controlPanel #panels .panel #timeSettings button#nextLunarEclipse,
+#controlPanel #panels .panel #timeSettings button#nextTotalSolarEclipse,
+#controlPanel #panels .panel #timeSettings button#nextTotalLunarEclipse,
+#controlPanel #panels .panel #timeSettings button#nextPartialSolarEclipse,
+#controlPanel #panels .panel #timeSettings button#nextPartialLunarEclipse{
 	width: 132px;
 }
 
