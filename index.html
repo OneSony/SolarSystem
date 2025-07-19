@@ -2470,6 +2470,7 @@
         if (radio.checked) changeStarland(radio.value);
       }); 
     });
+    speedInput.addEventListener('input', changeSpeedFactor);
     stopSwitch.addEventListener('change', changeStopSwitch);
     reserveSwitch.addEventListener('change', changeReserveSwitch);
     axisSwitch.addEventListener('change', changeAxisVisibility);
