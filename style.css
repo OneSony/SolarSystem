@@ -17,6 +17,10 @@ li {
 	list-style: none;
 }
 
+a {
+	color: #9f803c;
+}
+
 #title {
 	position: absolute;
 	top: 6px;
@@ -53,7 +57,7 @@ li {
   border-radius: 15px;
   box-shadow: 0 2px 16px 0 rgba(50,40,20,.18);
   padding: 13px 32px;
-  min-width: 280px;
+  min-width: 300px;
   max-width: 96vw;
   gap: 0;
   opacity: 0.97;
@@ -207,6 +211,7 @@ li {
 	display: none;
 	animation: fadeIn .3s;
 	-webkit-animation: fadeIn .3s;
+	height: 100%;
 }
 
 #controlPanel #panels .panel.active {
@@ -249,6 +254,67 @@ li {
 ul {
 	padding: 0;
 }
+
+#controlPanel #panels .panel #infoBlock {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+}
+
+#controlPanel #panels .panel #infoBlock #infoBody {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+	width: 96%;
+	font-family: SimSun;
+	font-size: 0.85rem;
+	line-height: 1.2rem;
+}
+
+#controlPanel #panels .panel #infoBlock #infoBody h4 {
+	margin: 20px 0 16px 0;
+	font-size: 1rem;
+	line-height: 1.5rem;
+}
+
+#controlPanel #panels .panel #infoBlock #infoBody img {
+    margin: 0 0 16px 0;
+}
+
+#controlPanel #panels .panel #infoBlock #infoBody p{
+    font-family: SimSun;
+	font-size: 0.8rem;
+	text-align: justify;
+	margin: 2px 0;
+	line-height: 1.2rem;
+	width: 100%;
+}
+
+#controlPanel #panels .panel #infoBlock #infoBody ul li{
+	margin-left: 28px;
+}
+
+#controlPanel #panels .panel #infoBlock #infoFooter {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	color: #646464;
+	font-family: 'Times New Roman', Time, SimSun, serif;
+	font-size: 0.7rem;
+	margin-bottom: 12px;
+}
+
+#controlPanel #panels .panel #infoBlock #infoFooter p {
+	margin: 3px 0;
+}
+
+#controlPanel #panels .panel #infoBlock #infoFooter a {
+	font-size: 0.75rem;
+}
+
 
 #controlPanel #panels .panel #viewSettings ul {
     display: flex;
@@ -1161,7 +1227,7 @@ ul {
 }
 
 #modalMask #helpWindow #helpBody #pagesContainer {
-	width: 90%;
+	width: 75%;
 	overflow-x: hidden;
 }
 
