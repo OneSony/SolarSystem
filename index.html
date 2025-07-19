@@ -2394,8 +2394,10 @@
           // 天体转动
           sun.rotation.y += dayDelta * sunRotateAnglePerDay;
           earthOrbit.rotation.y += dayDelta * earthRevolveAnglePerDay;
-          earthRotationGroup.rotation.y += dayDelta * earthRotateAnglePerDay;
-          moonOrbit.rotation.y += dayDelta * moonRevolveAnglePerDay;
+          earthRotationGroup.rotation.z = 0;
+          earthSphere.rotation.y += dayDelta * earthRotateAnglePerDay;
+          earthRotationGroup.rotation.z = 0.41015;
+          moonOrbit.rotation.y += dayDelta * (moonRevolveAnglePerDay - earthRevolveAnglePerDay);
           moonOrbitGroup.rotation.y += dayDelta * moonOrbitPrecessionPerDay;
           moon.rotation.y += 0;
       }
@@ -2406,8 +2408,10 @@
           // 天体转动
           sun.rotation.y = days * sunRotateAnglePerDay;
           earthOrbit.rotation.y = days * earthRevolveAnglePerDay;
-          earthRotationGroup.rotation.y = days * earthRotateAnglePerDay;
-          moonOrbit.rotation.y = days * moonRevolveAnglePerDay;
+          earthRotationGroup.rotation.z = 0;
+          earthSphere.rotation.y = days * earthRotateAnglePerDay;
+          earthRotationGroup.rotation.z = 0.41015;
+          moonOrbit.rotation.y = days * (moonRevolveAnglePerDay - earthRevolveAnglePerDay);
           moonOrbitGroup.rotation.y = days * moonOrbitPrecessionPerDay;
       }
       
