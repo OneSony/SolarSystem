@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Solar System</title>
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/icon.png" type="image/x-icon">
   <link rel="stylesheet" href="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/font-awesome/4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -15,11 +16,6 @@
 
   <!------ 仪表盘区域 ------>
   <div id="dashboard">
-    <div class="dashboard-item">
-      <span class="db-label">当前日期</span>
-      <span class="db-value" id="db-date">2000-1-1</span>
-    </div>
-    <div class="dashboard-divider"></div>
     <div class="dashboard-item">
       <span class="db-label">速度比例</span>
       <span class="db-value" id="db-speed">1d/s</span>
@@ -65,8 +61,31 @@
     <div id="panels">
       <!-- 标签页1：信息页 -->
       <div class="panel active" id="page1">
-        <h3>基本信息</h3>
-        <p>TODO: 放置关于天体科普（如天体参数、沙罗周期等）或者网页信息（如网页简介、开发者信息、功能描述等）的内容</p>
+        <div class="contorl-block" id="infoBlock">
+          <div id="infoBody">
+            <h4>&emsp;欢迎使用Solar System Sim!<br>这是一个在线天体运行演示平台</h4>
+            <img src="https://cdn.jsdelivr.net/gh/isXSong/FigureBed/SolarSystem/introduce.png" width="90%">
+            <p>&emsp;&emsp;本项目旨在通过交互式模拟，直观呈现太阳、地球、月球的运行关系，以及由此产生的月相变化、日食和月食现象。核心功能包括：
+            <ul>
+              <li>- 实时模拟日月地相对运动轨迹；</li>
+              <li>- 交互式的3D自由视角观察；</li>
+              <li>- 动态展示不同时间点的月相；</li>
+              <li>- 预测和演示日食（日全食、日偏食、日环食）和月食（月全食、月偏食）的发生过程；</li>
+              <li>- 支持调整时间流速、观测视角等参数。</li>
+            </ul>
+            </p>
+            <p>更多使用信息请查看<a href="javascript:void(0)" onclick="clickOnToolHelp()">帮助手册</a></p>
+          </div>
+          <div id="infoFooter">
+            <p>- © 2025 Solar System Sim. All rights reserved. -</p>
+            <p>- Developed by OneSony,&ensp;isXSong,&ensp;VoinCiao. -</p>
+            <p>- Powered by Three.js -</p>
+            <p>
+              本项目仅用于学习和教学实践&ensp;|&ensp;
+              <a href="https://github.com/OneSony/SolarSystem" target="_blank">GitHub 项目仓库</a>
+            </p>
+          </div>
+        </div>
       </div>
       <!-- 标签页2：视图页 -->
       <div class="panel" id="page2">
@@ -171,18 +190,6 @@
               </li>
             </ul>
           </div>
-          <div id="moonNodes">
-            <h5>黄白交点</h5>
-            <ul>
-              <li>
-                <input type="checkbox" id="moonNodesSwitch" checked hidden>
-                <label for="moonNodesSwitch" class="texture-label">
-                  <i></i>
-                  <span>显示黄白交点</span>
-                </label>
-              </li>
-            </ul>
-          </div>
         </div>
         <hr>
         <div class="contorl-block" id="auxiliarySettings">
@@ -204,6 +211,13 @@
                 <span>显示轨道法向量</span>
                 <i><span>√</span></i>
               </label>
+            </li>
+            <li>
+                <input type="checkbox" id="moonNodesSwitch" checked hidden>
+                <label for="moonNodesSwitch" class="texture-label">
+                  <span>显示黄白交点</span>
+                  <i><span>√</span></i>
+                </label>
             </li>
           </ul>
         </div>
@@ -267,16 +281,10 @@
         <!-- 控制块：时间控制 -->
         <div class="contorl-block" id="timeSettings">
           <h4>
-            <span class="zh">时间控制</span>
-            <span class="en">Time Control</span>
+            <span class="zh">快捷跳转</span>
+            <span class="en">Quick Jump</span>
           </h4>
-          <ul><li>
-            <h5>日期跳转</h5>
-            <input type="date" id="dateInput">
-            <button id="dateSubmit" onclick="onClickDateSubmit()"><i class="fa fa-check"></i></button>
-          </li></ul>
           <ul>
-            <h5>快捷选择</h5>
             <li>
               <button id="oneYearAgo" onclick="dateJumpBy(-365)">-1年</button>
               <button id="oneMonthAgo" onclick="dateJumpBy(-30)">-1月</button>
@@ -289,26 +297,11 @@
             </li>
             <li>
               <button id="nextTotalSolarEclipse">下一次日全食</button>
-              <button id="nextPartialSolarEclipse">下一次日偏食</button>
-            </li>
-            <li>
               <button id="nextTotalLunarEclipse">下一次月全食</button>
-              <button id="nextPartialLunarEclipse">下一次月偏食</button>
             </li>
-
-          </ul>
-        </div>
-        <hr>
-        <!-- 控制块：辅助功能 -->
-        <div class="contorl-block" id="accessibility">
-          <h4>
-            <span class="zh">辅助功能</span>
-            <span class="en">Accessibility</span>
-          </h4>
-          <ul>
             <li>
-              <h5>状态分析</h5>
-              <button id="analyzeAlignment" onclick="showAlignmentAnalysis()">分析当前对齐</button>
+              <button id="nextPartialSolarEclipse">下一次日偏食</button>
+              <button id="nextPartialLunarEclipse">下一次月偏食</button>
             </li>
           </ul>
         </div>
@@ -434,21 +427,22 @@
             </li>
             <li id="helpPage3" class="helpPage">
               <h2>日月食画中画</h2>
-              <p>占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位占位</p>
+              <div class="helpContent">
+                <p>Solar System Sim 提供了画中画功能，用于更清晰的展示<strong>月相变化、日食和月食</strong>的发生过程.</p>
+                <p>主显示区的模拟已经表现了真实的天体自转、公转比例，考虑了白道随沙罗周期的进动，渲染了正确的光影投射关系.</p>
+                <p>通过控制面板中的开关可以打开画中画小窗口，其中将同步主显示区月相盈亏、和日月食状态（涵盖全食、偏食、环食），更进一步的展示在地球上观测的投影及光线变化，并辅以文字说明，从而帮助用户理解这些复杂现象的形成机制.</p>
+                <p>考虑到日月食天象频次小、时间短，为了方便观察，在控制面板参数页也提供了快速跳转到指定天象的功能。</p>
+              </div>
             </li>
             <li id="helpPage4" class="helpPage">
-              <h2>速度与日期调节</h2>
-              <!-- 项目支持灵活的速度和时间调节功能。用户可通过控制面板或小工具条上的速度按钮，设定模拟速度（加速、减速、暂停、倒退），便于观察不同时间尺度下的天体运动和天象变化。日期调节方面，系统支持真实日期的显示，并可跳转到指定日期，方便用户回顾历史事件或预测未来天象。用户可以在任意时间点暂停模拟，分析对应的天体位置和状态。所有调节操作均会同步反馈在仪表盘，保证数据准确和操作流畅，满足不同学习和演示需求。 -->
+              <h2>运动调节</h2>
               <div class="helpContent">
-                <p>Solar System Sim 支持灵活的<strong>速度调节</strong>与<strong>日期跳转</strong>功能.</p>
+                <p>Solar System Sim 支持灵活的<strong>速度调节</strong>与<strong>快速跳转</strong>功能.</p>
                 <p>
-                  仪表盘会显示当前日期、速度比例和天象进程等基本状态信息
+                  仪表盘会显示当前速度比例和天象进程等基本状态信息
                 </p>
                 <p>
-                  通过控制面板上的控件，可以方便的调节模拟过程的速度，或进行暂停和倒退（小工具条也提供了暂停和速度调整的快捷按钮）。
-                </p>
-                <p>
-                  同样，可以通过控制面板上的日期选择器跳转到指定日期。或通过快捷选项向前向后快进
+                  通过控制面板上的控件，可以方便的调节模拟过程的速度、进行暂停和倒退（小工具条也提供了暂停和速度调整的快捷按钮）、快捷跳转到指定日期或指定天象。
                 </p>
                 <p>
                   无论是想静止分析某一时刻的天体位置，还是连续观察一年间月相变化，都能自由切换。所有操作之间相互兼容，效果实时反馈在显示区和仪表盘，确保数据准确、操作流畅
@@ -461,8 +455,7 @@
                 <ul>
                   <li><strong>截图：</strong>在小工具条中，一键保存并下载当前模拟画面</li>
                   <li><strong>贴图切换：</strong>允许随时为太阳、地球选择不同的外观贴图，或修改宇宙背景</li>
-                  <li><strong>辅助显示：</strong>可以打开自转轴、轨道面法向量等视觉辅助，更精细的观察交角及其变化</li>
-                  <li><strong>状态分析：</strong>在任意时刻分析当前天体的对齐信息，帮助用户理解日食、月食等现象的发生条件</li>
+                  <li><strong>辅助显示：</strong>可以打开自转轴、轨道面法向量、黄白交点等视觉辅助，更精细的观察交角及其变化</li>
                 </ul>
               </div>
             </li>
@@ -505,8 +498,6 @@
     const speedLabel = document.getElementById('speedLabel');
     const reserveSwitch = document.getElementById('reserveSwitch');
     const stopSwitch = document.getElementById('stopSwitch');
-    const dateInput = document.getElementById('dateInput');
-    const dashboardDate = document.getElementById('db-date');
     const dashboardSpeed = document.getElementById('db-speed');
     const dashboardSaros = document.getElementById('db-saros');
     const dashboardMoonPhase = document.getElementById('db-moonphase');
@@ -591,7 +582,7 @@
     const sunRotateAnglePerDay = 0.228729; //太阳每天自转的角度
     const earthRevolveAnglePerDay = 0.017202; //地球每天公转的角度（弧度）
     const earthRotateAnglePerDay = 6.283185; //地球每天自转的角度
-    const moonRevolveAnglePerDay = 0.229985; //月球每天公转的角度(恒星坐标系)
+    const moonRevolveAnglePerDay = 0.212783;
     const moonRotateAnglePerDay = 0.229985; //月球每天自转的角度
     // 月球轨道进动：2π / (18.6年 × 365.25天) = 2π / 6793天 ≈ 0.000924
     const moonOrbitPrecessionPerDay = -0.000924; //月球轨道进动角速度（约18.6年一周期，逆行）
@@ -2427,8 +2418,10 @@
           // 天体转动
           sun.rotation.y += dayDelta * sunRotateAnglePerDay;
           earthOrbit.rotation.y += dayDelta * earthRevolveAnglePerDay;
-          earthRotationGroup.rotation.y += dayDelta * earthRotateAnglePerDay;
-          moonOrbit.rotation.y += dayDelta * moonRevolveAnglePerDay;
+          earthRotationGroup.rotation.z = 0;
+          earthSphere.rotation.y += dayDelta * earthRotateAnglePerDay;
+          earthRotationGroup.rotation.z = 0.41015;
+          moonOrbit.rotation.y += dayDelta * (moonRevolveAnglePerDay);
           moonOrbitGroup.rotation.y += dayDelta * moonOrbitPrecessionPerDay;
           moon.rotation.y += 0;
       }
@@ -2439,8 +2432,10 @@
           // 天体转动
           sun.rotation.y = days * sunRotateAnglePerDay;
           earthOrbit.rotation.y = days * earthRevolveAnglePerDay;
-          earthRotationGroup.rotation.y = days * earthRotateAnglePerDay;
-          moonOrbit.rotation.y = days * moonRevolveAnglePerDay;
+          earthRotationGroup.rotation.z = 0;
+          earthSphere.rotation.y = days * earthRotateAnglePerDay;
+          earthRotationGroup.rotation.z = 0.41015;
+          moonOrbit.rotation.y = days * (moonRevolveAnglePerDay);
           moonOrbitGroup.rotation.y = days * moonOrbitPrecessionPerDay;
       }
       
@@ -2666,16 +2661,6 @@
       stepSimulation(dayDelta);
     }
 
-    //日期跳转To
-    function onClickDateSubmit(){
-      var dayValue = dateInput.value;
-      if (dayValue == '') return;
-      var dateTarget = new Date(dayValue);
-      var dayDelta = (dateTarget.getTime() - dateOrigin.getTime()) / (1000 * 60 * 60 * 24);
-      if(Math.abs(dayDelta-days) < 1) return;
-      stepSimulation(dayDelta, true);
-    }
-
     //小工具条：暂停
     function clickOnToolPause() {
       stopSwitch.checked = !stopSwitch.checked;
@@ -2744,8 +2729,6 @@
 
     //日期更新
     function updateDate() {
-      dashboardDate.innerHTML = dateCurrent.toLocaleString().split(' ')[0];
-      
       // 计算沙罗周期进度
       var sarosProgress = ((days % sarosCurrent) / sarosCurrent * 100);
       if(sarosProgress < 0) sarosProgress = 100 + sarosProgress;
