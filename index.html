@@ -351,6 +351,14 @@
             <option value="-90">南极附近</option>
           </select>
         </div>
+        <div class="pip-moon-distance">
+          <span class="distance-label">月球距离</span>
+          <select id="pipMoonDistanceSelect">
+            <option value="perigee">近地点 (易全食)</option>
+            <option value="average" selected>平均距离</option>
+            <option value="apogee">远地点 (易环食)</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
@@ -1514,6 +1522,42 @@
     }
 
     /**
+     * 获取月球大小比例（基于距离设置）
+     * @param {string} eclipseType - 日食类型 ('total' 或 'partial')
+     * @param {number} sunRadius - 太阳半径
+     * @returns {number} 月球半径
+     */
+    function getMoonRadius(eclipseType, sunRadius) {
+      const moonDistanceSelect = document.getElementById('pipMoonDistanceSelect');
+      const moonDistance = moonDistanceSelect ? moonDistanceSelect.value : 'average';
+      
+      // 基础月球大小（相对于太阳）
+      let baseScale;
+      if (eclipseType === 'total') {
+        baseScale = 1.05; // 日全食时月球需要稍大于太阳
+      } else {
+        baseScale = 0.95; // 日偏食时月球大小适中
+      }
+      
+      // 根据月球距离调整大小 - 模拟月球视角大小变化
+      let distanceScale = 1.0;
+      switch (moonDistance) {
+        case 'perigee': // 近地点：月球看起来更大（约356,500km）
+          distanceScale = 1.15; // 增大15%，容易形成日全食
+          break;
+        case 'apogee': // 远地点：月球看起来更小（约406,700km）
+          distanceScale = 0.85; // 减小15%，容易形成日环食
+          break;
+        case 'average': // 平均距离（约384,400km）
+        default:
+          distanceScale = 1.0;
+          break;
+      }
+      
+      return sunRadius * baseScale * distanceScale;
+    }
+
+    /**
      * 绘制2D日食动画
      * @param {number} progress - 食分进度 (0-1)
      * @param {string} eclipseType - 日食类型 ('total' 或 'partial')
@@ -1617,6 +1661,9 @@
         if (timeProgress > 0) {
           let currentX, currentY, moonRadius;
           
+          // 使用新的月球大小计算函数
+          moonRadius = getMoonRadius(eclipseType, sunRadius);
+          
           if (eclipseType === 'total') {
             // 日全食：月球直接穿过太阳中心
             const totalDistance = sunRadius * 2.5;
@@ -1627,7 +1674,6 @@
             
             currentX = startX + (endX - startX) * timeProgress;
             currentY = startY + (endY - startY) * timeProgress;
-            moonRadius = sunRadius * 1.05; // 月球稍大，完全遮挡
             
           } else {
             // 日偏食：月球只擦过太阳的上方边缘
@@ -1639,7 +1685,6 @@
             
             currentX = startX + (endX - startX) * timeProgress;
             currentY = startY + (endY - startY) * timeProgress;
-            moonRadius = sunRadius * 0.95; // 月球大小适中
           }
         
         // 绘制月球阴影本体 - 只遮挡太阳本体，不遮挡光芒和背景天空
@@ -2480,6 +2525,17 @@
     pipMinimize.addEventListener('click', togglePipMinimize);
     pipClose.addEventListener('click', togglePipVisibility);
     pipLocationSelect.addEventListener('change', changePipLocation);
+    
+    // 月球距离选择器事件监听
+    const pipMoonDistanceSelect = document.getElementById('pipMoonDistanceSelect');
+    if (pipMoonDistanceSelect) {
+      pipMoonDistanceSelect.addEventListener('change', function() {
+        // 当月球距离设置改变时，重新渲染日食画面
+        if (isPipVisible) {
+          updateMoonPhaseDisplay();
+        }
+      });
+    }
     
     // 主控制面板位置选择器同步
     const mainLocationSelect = document.getElementById('latitudePos');
