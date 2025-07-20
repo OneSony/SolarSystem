@@ -575,43 +575,6 @@ ul {
 	margin-left: 14px;
 }
 
-#controlPanel #panels .panel #PIPSettings label[for="latitudePos"] {
-	margin: 0;
-	padding: 0 0 5px 0;
-	font-family: SimSun, serif;
-	font-size: 0.9rem;
-}
-
-#controlPanel #panels .panel #PIPSettings #latitudePos {
-	height: 40px;
-	appearance: none;
-	background-color: #e0e0e0;
-	border-radius: 10px;
-	-webkit-border-radius: 10px;
-	-moz-border-radius: 10px;
-	-ms-border-radius: 10px;
-	-o-border-radius: 10px;
-	text-align: center;
-	z-index: 1;
-}
-
-#controlPanel #panels .panel #PIPSettings #latitudePos:hover {
-	box-shadow: #c9a35c 0 0 6px;
-}
-
-#controlPanel #panels .panel #PIPSettings #latitudePos option {
-	font-family: SimSun, serif;
-	font-size: 0.8rem;
-}
-
-#controlPanel #panels .panel #PIPSettings #latitudePos option:hover {
-	background-color: #181818
-}
-
-#controlPanel #panels .panel #PIPSettings #latitudePos option:checked {
-	background-color: #c9a35c
-}
-
 #controlPanel #panels .panel #speedSettings ul {
 	display: flex;
 	flex-direction: row;
@@ -1097,8 +1060,7 @@ ul {
   gap: 8px;
 }
 
-.pip-status,
-.pip-location {
+.pip-moon-distance {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1108,19 +1070,12 @@ ul {
   border: 1px solid #333;
 }
 
-.status-label,
-.location-label {
+.distance-label {
   font-size: 12px;
   color: #bbb;
 }
 
-.status-value {
-  font-size: 12px;
-  color: #c9a35c;
-  font-weight: 500;
-}
-
-#pipLocationSelect {
+#pipMoonDistanceSelect {
   background: rgba(32,32,32,0.8);
   border: 1px solid #555;
   border-radius: 4px;
@@ -1131,12 +1086,12 @@ ul {
   cursor: pointer;
 }
 
-#pipLocationSelect:focus {
+#pipMoonDistanceSelect:focus {
   border-color: #c9a35c;
   box-shadow: 0 0 0 1px rgba(201,163,92,0.3);
 }
 
-#pipLocationSelect option {
+#pipMoonDistanceSelect option {
   background: #2a2a2a;
   color: #e6ebf5;
 }
