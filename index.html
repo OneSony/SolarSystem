@@ -2751,13 +2751,11 @@
     function calculateSyzygyProgress() {
       // 获取当前天体角度位置
       const earthAngle = earthOrbit.rotation.y; // 地球绕太阳的角度
-      const moonOrbitPrecession = moonOrbitGroup.rotation.y; // 月球轨道进动
       const moonInOrbit = moonOrbit.rotation.y; // 月球在轨道内的角度（恒星坐标系）
       
-      // 关键修正：月球相对于太阳的角度需要考虑地球的运动
+      // 月相计算：直接使用月球相对地球的角度，忽略轨道进动的微小影响
       // 月球在太阳坐标系中的角度 = 地球角度 + 月球相对地球的角度
-      const moonRelativeToEarth = moonInOrbit + moonOrbitPrecession;
-      const moonAbsoluteAngle = earthAngle + moonRelativeToEarth;
+      const moonRelativeToEarth = moonInOrbit;
       
       // 计算月相角度：从地球看月球相对于太阳的角度
       // 关键修正：月相角度应该是月球相对地球背向太阳方向的角度
@@ -2858,10 +2856,8 @@
         isNearEclipseNode: isNearNode,
         currentDate: dateCurrent.toLocaleString(),
         earthAngle: earthAngle * 180 / Math.PI,
-        moonAngle: moonAbsoluteAngle * 180 / Math.PI,
         debugInfo: {
           moonInOrbit: moonInOrbit * 180 / Math.PI,
-          orbitPrecession: moonOrbitPrecession * 180 / Math.PI,
           relativeAngle: moonRelativeToEarth * 180 / Math.PI
         }
       };
@@ -2874,13 +2870,11 @@
     function calculateSyzygyProgressForDay(daysSinceOrigin) {
       // 基于天数计算天体角度位置
       const earthAngle = daysSinceOrigin * earthRevolveAnglePerDay;
-      const moonOrbitPrecession = daysSinceOrigin * moonOrbitPrecessionPerDay;
       const moonInOrbit = daysSinceOrigin * moonRevolveAnglePerDay;
       
-      // 关键修正：月球相对于太阳的角度需要考虑地球的运动
+      // 月相计算：直接使用月球相对地球的角度，忽略轨道进动的微小影响
       // 月球在太阳坐标系中的角度 = 地球角度 + 月球相对地球的角度
-      const moonRelativeToEarth = moonInOrbit + moonOrbitPrecession;
-      const moonAbsoluteAngle = earthAngle + moonRelativeToEarth;
+      const moonRelativeToEarth = moonInOrbit;
       
       // 计算月相角度：从地球看月球相对于太阳的角度
       // 关键修正：月相角度应该是月球相对地球背向太阳方向的角度
@@ -2981,10 +2975,8 @@
         isNearEclipseNode: isNearNode,
         currentDate: testDate.toLocaleString(),
         earthAngle: earthAngle * 180 / Math.PI,
-        moonAngle: moonAbsoluteAngle * 180 / Math.PI,
         debugInfo: {
           moonInOrbit: moonInOrbit * 180 / Math.PI,
-          orbitPrecession: moonOrbitPrecession * 180 / Math.PI,
           relativeAngle: moonRelativeToEarth * 180 / Math.PI
         }
       };
