@@ -537,6 +537,7 @@
     let pip3DMoon = null;
     let pipSunLight = null;
     let pipAmbientLight = null;
+    let pipViewLight = null; // 视角方向补光
     let lastPhaseAngle = 0;
     let lastIllumination = 0;
     let phaseTransitionSpeed = 0.02; // 降低过渡速度，使变化更平滑
@@ -1153,13 +1154,21 @@
       pipScene.add(pipSunLight);
       
       // 环境光（微弱，模拟宇宙中的散射光）
-      pipAmbientLight = new THREE.AmbientLight(0x404060, 0.1);
+      pipAmbientLight = new THREE.AmbientLight(0x404060, 0.2); // 增强环境光到0.2
       pipScene.add(pipAmbientLight);
       
       // 添加一些点光源模拟地球反射光
       const earthLight = new THREE.PointLight(0x6699ff, 0.2, 10);
       earthLight.position.set(-3, 1, 2);
       pipScene.add(earthLight);
+      
+      // 添加视角方向补光（从相机方向照亮月球，确保新月时也能看到轮廓）
+      pipViewLight = new THREE.DirectionalLight(0x6080ff, 0.8); // 增强亮度到0.8，淡蓝白色
+      pipViewLight.position.copy(pipCamera.position); // 从相机位置发出
+      pipViewLight.target.position.set(0, 0, 0); // 照向月球中心
+      pipViewLight.castShadow = false; // 补光不产生阴影，避免冲突
+      pipScene.add(pipViewLight);
+      pipScene.add(pipViewLight.target);
     }
     
     /**
@@ -1303,9 +1312,17 @@
       const targetIntensity = 1.5 + illumination * 1.5;
       pipSunLight.intensity = targetIntensity;
       
-      // 直接设置环境光
-      const targetAmbient = 0.05 + illumination * 0.15;
+      // 直接设置环境光 - 新月时保持足够亮度
+      const targetAmbient = 0.15 + illumination * 0.15; // 基础亮度从0.15开始
       pipAmbientLight.intensity = targetAmbient;
+      
+      // 动态调整视角补光强度：新月时最强，满月时最弱
+      if (pipViewLight) {
+        // illumination 范围 0-1，新月时为0，满月时为1
+        // 补光强度：新月时1.0，满月时0.2，呈反比关系
+        const viewLightIntensity = 1.0 - (illumination * 0.8);
+        pipViewLight.intensity = Math.max(0.2, viewLightIntensity); // 最小保持0.2，最大1.0
+      }
       
       // 月球潮汐锁定 - 完全静止，不自转
       pip3DMoon.rotation.set(0, 0, 0);
@@ -1370,6 +1387,7 @@
       pip3DMoon = null;
       pipSunLight = null;
       pipAmbientLight = null;
+      pipViewLight = null; // 清理视角补光
     }
 
     /* * * * * * * * * *
