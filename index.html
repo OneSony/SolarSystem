@@ -8,6 +8,38 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!------ 月食跳转浮动banner ------>
+  <div id="eclipseBanner" class="eclipse-banner hidden">
+    <div class="banner-content">
+      <div class="banner-icon">🌙</div>
+      <div class="banner-info">
+        <div class="banner-header">
+          <div class="banner-title">已跳转到下一次月食</div>
+          <div class="eclipse-type-badge">月全食</div>
+        </div>
+        <div class="banner-tips">💡 打开画中画观看完整月食过程</div>
+      </div>
+      <button class="banner-close" onclick="hideEclipseBanner()">×</button>
+    </div>
+    <div class="banner-progress"></div>
+  </div>
+
+  <!------ 日食跳转浮动banner ------>
+  <div id="solarEclipseBanner" class="eclipse-banner hidden">
+    <div class="banner-content">
+      <div class="banner-icon">☀️</div>
+      <div class="banner-info">
+        <div class="banner-header">
+          <div class="banner-title">已跳转到下一次日食</div>
+          <div class="eclipse-type-badge"></div>
+        </div>
+        <div class="banner-tips">💡 打开画中画观看完整日食过程</div>
+      </div>
+      <button class="banner-close" onclick="hideSolarEclipseBanner()">×</button>
+    </div>
+    <div class="banner-progress"></div>
+  </div>
+
   <!------ 标题 ------>
   <div id="title">
     <img src="https://cdn.picui.cn/vip/2025/07/11/6870e6590199f.png" alt="Solar System">
@@ -26,7 +58,7 @@
       <span class="db-value" id="db-saros">0%</span>
     </div>
     <div class="dashboard-divider"></div>
-    <div class="dashboard-item">
+    <div class="dashboard-item moon-phase">
       <span class="db-label">月相状态</span>
       <span class="db-value" id="db-moonphase">新月</span>
     </div>
@@ -486,6 +518,11 @@
     const pipMinimize = document.getElementById('pipMinimize');
     const pipClose = document.getElementById('pipClose');
     const PIPSwitch = document.getElementById('PIPSwitch');
+    
+    // Banner管理变量
+    let currentBannerTimer = null;
+    let currentProgressTimer = null;
+    let activeBanner = null;
     const prevPageBtn = document.getElementById('prevPageBtn');
     const nextPageBtn = document.getElementById('nextPageBtn');
     const helpModal = document.getElementById('modalMask');
@@ -500,6 +537,7 @@
     let pip3DMoon = null;
     let pipSunLight = null;
     let pipAmbientLight = null;
+    let pipViewLight = null; // 视角方向补光
     let lastPhaseAngle = 0;
     let lastIllumination = 0;
     let phaseTransitionSpeed = 0.02; // 降低过渡速度，使变化更平滑
@@ -535,28 +573,12 @@
       }
     }
 
-    /**
-     * 验证跳转后的类型与查找结果是否一致
-     * 确保用户看到的就是他们请求的类型
-     */
-    function validateEclipseTypeConsistency(foundType, targetDay, eclipseKind) {
-      const nodeData = calculateMoonNodePosition(targetDay);
-      const actualType = determineEclipseTypeUnified(nodeData.minDistanceFromNode);
-      
-      if (actualType !== foundType) {
-        console.warn(`类型不一致警告: 查找到${foundType}, 实际验证为${actualType}, 交点距离: ${(nodeData.minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
-        console.warn(`强制使用查找结果: ${foundType}`);
-      }
-      
-      return foundType; // 始终返回查找到的类型，确保一致性
-    }
-
     // 公共变量：天体和运动参数
     const frameRate = 60; //动画帧数
     const sunRotateAnglePerDay = 0.228729; //太阳每天自转的角度
     const earthRevolveAnglePerDay = 0.017202; //地球每天公转的角度（弧度）
     const earthRotateAnglePerDay = 6.283185; //地球每天自转的角度
-    const moonRevolveAnglePerDay = 0.212783;
+    const moonRevolveAnglePerDay = 0.213707; // 补偿进动影响后的月球公转角速度，保持朔望月29.53天周期
     const moonRotateAnglePerDay = 0.229985; //月球每天自转的角度
     // 月球轨道进动：2π / (18.6年 × 365.25天) = 2π / 6793天 ≈ 0.000924
     const moonOrbitPrecessionPerDay = -0.000924; //月球轨道进动角速度（约18.6年一周期，逆行）
@@ -744,10 +766,10 @@
     
     // 黄白交点位于月球轨道上，距离地球1.2个单位
     // 考虑到轨道倾斜的几何关系，交点应该在z轴方向
-    // 升交点位于角度π/2的位置，降交点位于角度3π/2的位置
+    // 由于月球轨道倾斜-5.15°，升交点在Z负方向，降交点在Z正方向
     const moonOrbitRadius = 1.2;
-    ascendingNode.position.set(0, 0, moonOrbitRadius);
-    descendingNode.position.set(0, 0, -moonOrbitRadius);
+    ascendingNode.position.set(0, 0, -moonOrbitRadius);  // 升交点：从下方穿过到上方
+    descendingNode.position.set(0, 0, moonOrbitRadius);   // 降交点：从上方穿过到下方
     
     // 将交点添加到月球轨道组中，这样它们会跟随轨道倾斜和进动
     moonOrbitGroup.add(ascendingNode);
@@ -836,12 +858,11 @@
       context1.fillStyle = '#00ff00';
       context1.textAlign = 'center';
       context1.fillText('升交点', 64, 32);
-      context1.fillText('☊', 64, 50);
       
       const texture1 = new THREE.CanvasTexture(canvas1);
       const material1 = new THREE.SpriteMaterial({ map: texture1 });
       const ascending = new THREE.Sprite(material1);
-      ascending.position.set(0, 0.2, 1.2);
+      ascending.position.set(0, 0.2, -1.2);  // 升交点在Z负方向
       ascending.scale.set(0.5, 0.25, 1);
       
       // 创建降交点标签
@@ -853,12 +874,11 @@
       context2.fillStyle = '#ff0000';
       context2.textAlign = 'center';
       context2.fillText('降交点', 64, 32);
-      context2.fillText('☋', 64, 50);
       
       const texture2 = new THREE.CanvasTexture(canvas2);
       const material2 = new THREE.SpriteMaterial({ map: texture2 });
       const descending = new THREE.Sprite(material2);
-      descending.position.set(0, 0.2, -1.2);
+      descending.position.set(0, 0.2, 1.2);   // 降交点在Z正方向
       descending.scale.set(0.5, 0.25, 1);
       
       return { ascending, descending };
@@ -1134,13 +1154,21 @@
       pipScene.add(pipSunLight);
       
       // 环境光（微弱，模拟宇宙中的散射光）
-      pipAmbientLight = new THREE.AmbientLight(0x404060, 0.1);
+      pipAmbientLight = new THREE.AmbientLight(0x404060, 0.2); // 增强环境光到0.2
       pipScene.add(pipAmbientLight);
       
       // 添加一些点光源模拟地球反射光
       const earthLight = new THREE.PointLight(0x6699ff, 0.2, 10);
       earthLight.position.set(-3, 1, 2);
       pipScene.add(earthLight);
+      
+      // 添加视角方向补光（从相机方向照亮月球，确保新月时也能看到轮廓）
+      pipViewLight = new THREE.DirectionalLight(0x6080ff, 0.8); // 增强亮度到0.8，淡蓝白色
+      pipViewLight.position.copy(pipCamera.position); // 从相机位置发出
+      pipViewLight.target.position.set(0, 0, 0); // 照向月球中心
+      pipViewLight.castShadow = false; // 补光不产生阴影，避免冲突
+      pipScene.add(pipViewLight);
+      pipScene.add(pipViewLight.target);
     }
     
     /**
@@ -1284,9 +1312,17 @@
       const targetIntensity = 1.5 + illumination * 1.5;
       pipSunLight.intensity = targetIntensity;
       
-      // 直接设置环境光
-      const targetAmbient = 0.05 + illumination * 0.15;
+      // 直接设置环境光 - 新月时保持足够亮度
+      const targetAmbient = 0.15 + illumination * 0.15; // 基础亮度从0.15开始
       pipAmbientLight.intensity = targetAmbient;
+      
+      // 动态调整视角补光强度：新月时最强，满月时最弱
+      if (pipViewLight) {
+        // illumination 范围 0-1，新月时为0，满月时为1
+        // 补光强度：新月时1.0，满月时0.2，呈反比关系
+        const viewLightIntensity = 1.0 - (illumination * 0.8);
+        pipViewLight.intensity = Math.max(0.2, viewLightIntensity); // 最小保持0.2，最大1.0
+      }
       
       // 月球潮汐锁定 - 完全静止，不自转
       pip3DMoon.rotation.set(0, 0, 0);
@@ -1294,66 +1330,6 @@
       pipCamera.lookAt(0, 0, 0);
     }
 
-    /**
-     * 更新3D月相光照（根据太阳位置）- 保留用于初始化
-     */
-    function update3DMoonPhase(phaseAngle, illumination) {
-      if (!pipSunLight || !pip3DMoon) return;
-      
-      // 根据原始月相角度计算逻辑：
-      // phaseAngle来自 (moonRelativeToEarth + Math.PI) 的计算
-      // 需要反推回moonRelativeToEarth来确定正确的光照方向
-      
-      // 反推月球相对地球的实际角度
-      const moonRelativeAngle = phaseAngle - Math.PI;
-      
-      // 根据月相计算最佳观测时间的天空颜色
-      const skyColor = calculateSkyColor(moonRelativeAngle);
-      
-      // 直接使用月球相对地球的角度，移除π/2修正
-      const sunAngleFor3D = moonRelativeAngle;
-      
-      // 地球视角：相机在Z+方向，光源在XZ平面内旋转
-      // 当moonRelativeAngle=0时（满月），光源从Z+方向照射
-      // 当moonRelativeAngle=π时（新月），光源从Z-方向照射
-      const sunDistance = 8;
-      const targetSunX = Math.sin(sunAngleFor3D) * sunDistance;  // X轴变化
-      const targetSunY = 0; // 保持在赤道平面
-      const targetSunZ = Math.cos(sunAngleFor3D) * sunDistance;  // Z轴变化，主要方向
-      
-      // 更新背景颜色
-      if (pipRenderer) {
-        pipRenderer.setClearColor(skyColor, 1.0);
-      }
-      
-      // 平滑过渡光源位置，避免瞬时变化 - 根据倍速调整
-      const baseLightSpeed = 0.04;
-      const lightTransitionSpeed = Math.min(0.5, baseLightSpeed * Math.sqrt(speedFactor));
-      
-      // 简化的平滑过渡，避免复杂的边界处理
-      lastSunLightPosition.x += (targetSunX - lastSunLightPosition.x) * lightTransitionSpeed;
-      lastSunLightPosition.y += (targetSunY - lastSunLightPosition.y) * lightTransitionSpeed;
-      lastSunLightPosition.z += (targetSunZ - lastSunLightPosition.z) * lightTransitionSpeed;
-      
-      // 更新光源位置
-      pipSunLight.position.set(lastSunLightPosition.x, lastSunLightPosition.y, lastSunLightPosition.z);
-      pipSunLight.lookAt(0, 0, 0);
-      
-      // 根据照明程度调整光照强度
-      const targetIntensity = 1.5 + illumination * 1.5;
-      pipSunLight.intensity += (targetIntensity - pipSunLight.intensity) * 0.1;
-      
-      // 调整环境光
-      const targetAmbient = 0.05 + illumination * 0.15;
-      pipAmbientLight.intensity += (targetAmbient - pipAmbientLight.intensity) * 0.1;
-      
-      // 月球潮汐锁定 - 完全静止，不自转
-      // 月球始终以同一面朝向观察者（地球）
-      pip3DMoon.rotation.set(0, 0, 0);
-      
-      pipCamera.lookAt(0, 0, 0);
-    }
-    
     /**
      * 3D月相动画循环
      */
@@ -1411,6 +1387,7 @@
       pip3DMoon = null;
       pipSunLight = null;
       pipAmbientLight = null;
+      pipViewLight = null; // 清理视角补光
     }
 
     /* * * * * * * * * *
@@ -1687,7 +1664,9 @@
             ctx.lineWidth = 2;
             for (let i = 0; i < 40; i++) {
               const angle = (i / 40) * 2 * Math.PI;
-              const rayLength = 40 + Math.sin(angle * 3) * 15 + Math.random() * 25;
+              // 减慢随机变化，使用更慢的时间因子
+              const slowTime = Date.now() * 0.001; // 从0.01改为0.001，减慢10倍
+              const rayLength = 40 + Math.sin(angle * 3 + slowTime) * 15 + Math.sin(slowTime + i) * 10;
               const x1 = centerX + Math.cos(angle) * (sunRadius + 2);
               const y1 = centerY + Math.sin(angle) * (sunRadius + 2);
               const x2 = centerX + Math.cos(angle) * (sunRadius + rayLength);
@@ -1699,12 +1678,13 @@
               ctx.stroke();
             }
             
-            // 绘制流光效果（更多更亮）
+            // 绘制流光效果（更多更亮，减慢动画速度）
             ctx.strokeStyle = `rgba(220, 220, 255, ${coronaIntensity * 0.7})`;
             ctx.lineWidth = 1;
             for (let i = 0; i < 20; i++) {
               const angle = (i / 20) * 2 * Math.PI;
-              const waveLength = 50 + Math.sin(Date.now() * 0.01 + i) * 15;
+              // 减慢流光动画速度
+              const waveLength = 50 + Math.sin(Date.now() * 0.003 + i) * 15; // 从0.01改为0.003
               const x1 = centerX + Math.cos(angle) * (sunRadius + 15);
               const y1 = centerY + Math.sin(angle) * (sunRadius + 15);
               const x2 = centerX + Math.cos(angle) * (sunRadius + waveLength);
@@ -1716,19 +1696,28 @@
               ctx.stroke();
             }
             
-            // 绘制星星效果（全食时可见星星）
+            // 绘制星星效果（全食时可见星星，使用固定位置）
             if (intensity > 0.7) {
               ctx.fillStyle = `rgba(255, 255, 255, ${coronaIntensity * 0.8})`;
-              for (let i = 0; i < 8; i++) {
-                const angle = Math.random() * 2 * Math.PI;
-                const distance = sunRadius * 2 + Math.random() * sunRadius;
-                const x = centerX + Math.cos(angle) * distance;
-                const y = centerY + Math.sin(angle) * distance;
+              
+              // 使用固定的星星位置避免闪烁
+              if (!window.cachedCoronaStars) {
+                window.cachedCoronaStars = [];
+                for (let i = 0; i < 8; i++) {
+                  const angle = (i / 8) * 2 * Math.PI + Math.sin(i) * 0.5; // 固定角度分布
+                  const distance = sunRadius * 2.2 + (i % 3) * 15; // 固定距离
+                  window.cachedCoronaStars.push({ angle, distance });
+                }
+              }
+              
+              window.cachedCoronaStars.forEach(star => {
+                const x = centerX + Math.cos(star.angle) * star.distance;
+                const y = centerY + Math.sin(star.angle) * star.distance;
                 
                 ctx.beginPath();
                 ctx.arc(x, y, 2, 0, 2 * Math.PI);
                 ctx.fill();
-              }
+              });
             }
           }
         
@@ -1824,30 +1813,7 @@
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       
-      // 添加黑色描边以提高可读性
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.lineWidth = 2;
-      
-      const progressText = `${eclipseType === 'total' ? '日全食' : '日偏食'} ${(combinedProgress * 100).toFixed(1)}%`;
-      ctx.strokeText(progressText, centerX, canvas.height - 20);
-      ctx.fillText(progressText, centerX, canvas.height - 20);
-      
-              // 日全食时在全食阶段显示特殊标记
-        if (eclipseType === 'total' && intensity > 0.75 && intensity < 0.9) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-          ctx.font = 'bold 14px Arial';
-          ctx.strokeText('全食阶段 - 可见日冕', centerX, canvas.height - 45);
-          ctx.fillText('全食阶段 - 可见日冕', centerX, canvas.height - 45);
-        }
-        
-        // 显示轨迹类型提示
-        if (timeProgress > 0.1 && timeProgress < 0.9) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-          ctx.font = '12px Arial';
-          const trackText = eclipseType === 'total' ? '月球轨迹：穿过太阳中心' : '月球轨迹：擦过太阳上方';
-          ctx.strokeText(trackText, centerX, 30);
-          ctx.fillText(trackText, centerX, 30);
-        }
+      // 进度说明已移除以保持画面简洁
     }
 
     /**
@@ -1931,19 +1897,39 @@
       ctx.arc(centerX, centerY, moonRadius, 0, 2 * Math.PI);
       ctx.fill();
 
-      // 绘制月球表面纹理
+      // 绘制月球表面纹理（使用固定位置避免闪烁）
       ctx.fillStyle = 'rgba(180, 180, 180, 0.3)';
-      for (let i = 0; i < 20; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const distance = Math.random() * moonRadius * 0.8;
-        const x = centerX + Math.cos(angle) * distance;
-        const y = centerY + Math.sin(angle) * distance;
-        const radius = Math.random() * 8 + 3;
+      
+      // 生成固定的月球纹理位置（基于月球半径作为种子）
+      if (!window.cachedMoonTexture || window.cachedMoonTexture.radius !== moonRadius) {
+        window.cachedMoonTexture = {
+          radius: moonRadius,
+          craters: []
+        };
         
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
-        ctx.fill();
+        // 使用固定种子生成稳定的纹理
+        const tempRandom = Math.random;
+        Math.random = () => Math.sin(moonRadius * 12345) % 1; // 临时固定随机数
+        
+        for (let i = 0; i < 20; i++) {
+          const angle = (i / 20) * 2 * Math.PI + Math.sin(i * 3.14) * 0.5;
+          const distance = (0.3 + (i % 5) * 0.1) * moonRadius;
+          const x = centerX + Math.cos(angle) * distance;
+          const y = centerY + Math.sin(angle) * distance;
+          const radius = 3 + (i % 3) * 2;
+          
+          window.cachedMoonTexture.craters.push({ x: x - centerX, y: y - centerY, radius });
+        }
+        
+        Math.random = tempRandom; // 恢复原始随机函数
       }
+      
+      // 绘制缓存的月球纹理
+      window.cachedMoonTexture.craters.forEach(crater => {
+        ctx.beginPath();
+        ctx.arc(centerX + crater.x, centerY + crater.y, crater.radius, 0, 2 * Math.PI);
+        ctx.fill();
+      });
 
       // 绘制地球阴影（位置基于时间进度，强度基于天文条件）
       if (timeProgress > 0) {
@@ -2106,32 +2092,7 @@
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       
-      // 添加黑色描边以提高可读性
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.lineWidth = 2;
-      
-      const progressText = `${eclipseType === 'total' ? '月全食' : '月偏食'} ${(combinedProgress * 100).toFixed(1)}%`;
-      ctx.strokeText(progressText, centerX, canvas.height - 20);
-      ctx.fillText(progressText, centerX, canvas.height - 20);
-      
-      // 月全食时在血月阶段显示特殊标记
-      if (eclipseType === 'total' && intensity > 0.5 && intensity < 0.8) {
-        ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
-        ctx.font = 'bold 14px Arial';
-        ctx.strokeText('血月阶段 - 地球大气散射红光', centerX, canvas.height - 45);
-        ctx.fillText('血月阶段 - 地球大气散射红光', centerX, canvas.height - 45);
-      }
-      
-      // 显示轨迹类型提示
-      if (timeProgress > 0.1 && timeProgress < 0.9) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.font = '12px Arial';
-        const trackText = eclipseType === 'total' ? 
-          '地球阴影轨迹：穿过月球中心' : 
-          '地球阴影轨迹：从月球上方经过';
-        ctx.strokeText(trackText, centerX, 30);
-        ctx.fillText(trackText, centerX, 30);
-      }
+      // 进度说明已移除以保持画面简洁
     }
 
     /**
@@ -2622,6 +2583,9 @@
     function changeMoonNodesVisibility() {
       ascendingNode.visible = moonNodesSwitch.checked;
       descendingNode.visible = moonNodesSwitch.checked;
+      // 同时控制月球交点标签的可见性
+      nodeLabels.ascending.visible = moonNodesSwitch.checked;
+      nodeLabels.descending.visible = moonNodesSwitch.checked;
     }
 
     //修改速度
@@ -2832,10 +2796,9 @@
       const moonOrbitPrecession = moonOrbitGroup.rotation.y; // 月球轨道进动
       const moonInOrbit = moonOrbit.rotation.y; // 月球在轨道内的角度（恒星坐标系）
       
-      // 关键修正：月球相对于太阳的角度需要考虑地球的运动
+      // 月相计算：直接使用月球相对地球的角度，忽略轨道进动的微小影响
       // 月球在太阳坐标系中的角度 = 地球角度 + 月球相对地球的角度
       const moonRelativeToEarth = moonInOrbit + moonOrbitPrecession;
-      const moonAbsoluteAngle = earthAngle + moonRelativeToEarth;
       
       // 计算月相角度：从地球看月球相对于太阳的角度
       // 关键修正：月相角度应该是月球相对地球背向太阳方向的角度
@@ -2929,21 +2892,15 @@
         alignmentType = '残月';
       }
       
-      // 计算下次对齐时间
-      const nextAlignment = calculateNextAlignment(moonPhaseAngle);
-      
       return {
         progress: alignmentProgress,
         type: alignmentType,
         moonPhase: phaseDegrees,
         isNearEclipseNode: isNearNode,
-        nextAlignment: nextAlignment,
         currentDate: dateCurrent.toLocaleString(),
         earthAngle: earthAngle * 180 / Math.PI,
-        moonAngle: moonAbsoluteAngle * 180 / Math.PI,
         debugInfo: {
           moonInOrbit: moonInOrbit * 180 / Math.PI,
-          orbitPrecession: moonOrbitPrecession * 180 / Math.PI,
           relativeAngle: moonRelativeToEarth * 180 / Math.PI
         }
       };
@@ -2959,10 +2916,9 @@
       const moonOrbitPrecession = daysSinceOrigin * moonOrbitPrecessionPerDay;
       const moonInOrbit = daysSinceOrigin * moonRevolveAnglePerDay;
       
-      // 关键修正：月球相对于太阳的角度需要考虑地球的运动
+      // 月相计算：直接使用月球相对地球的角度，忽略轨道进动的微小影响
       // 月球在太阳坐标系中的角度 = 地球角度 + 月球相对地球的角度
       const moonRelativeToEarth = moonInOrbit + moonOrbitPrecession;
-      const moonAbsoluteAngle = earthAngle + moonRelativeToEarth;
       
       // 计算月相角度：从地球看月球相对于太阳的角度
       // 关键修正：月相角度应该是月球相对地球背向太阳方向的角度
@@ -3053,9 +3009,6 @@
         alignmentType = '残月';
       }
       
-      // 计算下次对齐时间
-      const nextAlignment = calculateNextAlignment(moonPhaseAngle);
-      
       // 创建测试日期
       const testDate = new Date(dateOrigin.getTime() + daysSinceOrigin * 24 * 60 * 60 * 1000);
       
@@ -3064,63 +3017,15 @@
         type: alignmentType,
         moonPhase: phaseDegrees,
         isNearEclipseNode: isNearNode,
-        nextAlignment: nextAlignment,
         currentDate: testDate.toLocaleString(),
         earthAngle: earthAngle * 180 / Math.PI,
-        moonAngle: moonAbsoluteAngle * 180 / Math.PI,
         debugInfo: {
           moonInOrbit: moonInOrbit * 180 / Math.PI,
-          orbitPrecession: moonOrbitPrecession * 180 / Math.PI,
           relativeAngle: moonRelativeToEarth * 180 / Math.PI
         }
       };
     }
-    
-    /**
-     * 计算距离下次日地月完美对齐的天数
-     * 修正版：基于正确的月球会合周期
-     */
-    function calculateNextAlignment(currentMoonPhase) {
-      // 朔望月周期（会合周期）
-      const synodicPeriod = 29.530588853; // 天
-      
-      // 当前月相角度（弧度转换为0-2π范围）
-      const phaseRadians = currentMoonPhase;
-      
-      // 计算到下次新月的时间
-      let daysToNewMoon;
-      if (phaseRadians < 0.261799) { // 15度以内
-        daysToNewMoon = (2 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      } else {
-        daysToNewMoon = (2 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      }
-      
-      // 计算到下次满月的时间
-      let daysToFullMoon;
-      const fullMoonPhase = Math.PI; // 180度
-      let phaseToFull = Math.abs(phaseRadians - fullMoonPhase);
-      if (phaseToFull > Math.PI) {
-        phaseToFull = 2 * Math.PI - phaseToFull;
-      }
-      
-      if (phaseRadians < Math.PI) {
-        daysToFullMoon = (Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      } else {
-        daysToFullMoon = (3 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      }
-      
-      // 月球轨道交点周期约18.6年
-      const nodePeriod = 18.6 * 365.25; // 天
-      const currentNodePhase = (moonOrbitGroup.rotation.y % (2 * Math.PI));
-      
-      return {
-        daysToNewMoon: Math.abs(daysToNewMoon),
-        daysToFullMoon: Math.abs(daysToFullMoon),
-        synodicPeriod: synodicPeriod,
-        currentPhase: phaseRadians * 180 / Math.PI
-      };
-    }
-    
+
     /**
      * 更新月相状态显示（优化版本）
      */
@@ -3291,9 +3196,6 @@
       // 月球在轨道上的位置角度（月球公转）
       const moonOrbitAngle = daysSinceOrigin * moonRevolveAnglePerDay;
       
-      // 月球轨道进动角度（轨道面的进动，约18.6年周期）
-      const moonOrbitPrecessionAngle = daysSinceOrigin * moonOrbitPrecessionPerDay;
-      
       // 计算月球相对于交点的角度
       // 升交点位于角度π/2，降交点位于角度3π/2
       const angleFromAscendingNode = moonOrbitAngle - Math.PI/2;
@@ -3313,27 +3215,20 @@
       const eclipseType = determineEclipseTypeUnified(minDistanceFromNode);
       const isNearNode = eclipseType !== 'none';
       
-      // 计算月球的黄纬（基于轨道倾斜5.15度）
-      // 由于交点位置调整到π/2和3π/2，黄纬计算公式需要相应调整
-      const moonOrbitInclination = THREE.MathUtils.degToRad(5.15);
-      const eclipticLatitude = -Math.cos(moonOrbitAngle) * Math.sin(moonOrbitInclination);
-      
       return {
         moonOrbitAngle: moonOrbitAngle,
-        moonOrbitPrecessionAngle: moonOrbitPrecessionAngle,
         distanceFromAscendingNode: distFromAscending,
         distanceFromDescendingNode: distFromDescending,
         minDistanceFromNode: minDistanceFromNode,
         isNearNode: isNearNode,
         eclipseType: eclipseType, // 新增：食相类型
-        eclipticLatitude: eclipticLatitude,
         nearAscendingNode: distFromAscending < distFromDescending
       };
     }
     
 
     // 寻找下一次日食的时间
-    function findNextSolarEclipse(currentDays, maxSearchDays = 10000, eclipseType = 'any') {
+    function findNextSolarEclipse(currentDays, maxSearchDays = Math.ceil(sarosCurrent), eclipseType = 'any') {
       for (let i = 1; i < maxSearchDays; i++) {
         const testDay = currentDays + i;
         
@@ -3364,7 +3259,7 @@
     }
     
     // 寻找下一次月食的时间
-    function findNextLunarEclipse(currentDays, maxSearchDays = 10000, eclipseType = 'any') {
+    function findNextLunarEclipse(currentDays, maxSearchDays = Math.ceil(sarosCurrent), eclipseType = 'any') {
       for (let i = 1; i < maxSearchDays; i++) {
         const testDay = currentDays + i;
         
@@ -3414,7 +3309,7 @@
       
       // 使用 setTimeout 让UI有时间更新
       setTimeout(() => {
-        const nextEclipse = findNextSolarEclipse(days, 10000); // 搜索接下来27年内
+        const nextEclipse = findNextSolarEclipse(days, Math.ceil(sarosCurrent)); // 搜索一个沙罗周期内
         
         if (nextEclipse !== null) {
           // 跳转到日食前2.5天，让用户看到完整的动画过程
@@ -3424,12 +3319,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置日食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency(nextEclipse.type, nextEclipse.day, 'solar');
+          // 设置日食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'solar',
-            type: validatedType, // 使用验证后的类型
+            type: nextEclipse.type, // 直接使用查找到的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
@@ -3448,9 +3342,14 @@
           // 显示成功消息
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
-          alert(`找到下一次${eclipseTypeText}！\n${eclipseTypeText}日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的日食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          
+          // 显示日食banner
+          showSolarEclipseBanner({
+            type: eclipseTypeText,
+            title: '已跳转到下一次日食'
+          });
         } else {
-          alert('在接下来的27年内未找到日食');
+          showSolarErrorBanner('在接下来的27年内未找到日食');
         }
         
         // 恢复按钮
@@ -3459,6 +3358,226 @@
       }, 100);
     }
     
+    // 显示月食跳转浮动banner
+    function showEclipseBanner(data) {
+      // 清除现有定时器
+      if (currentBannerTimer) {
+        clearTimeout(currentBannerTimer);
+        currentBannerTimer = null;
+      }
+      if (currentProgressTimer) {
+        clearTimeout(currentProgressTimer);
+        currentProgressTimer = null;
+      }
+      
+      // 隐藏其他banner
+      hideSolarEclipseBanner();
+      
+      const banner = document.getElementById('eclipseBanner');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const titleElement = banner.querySelector('.banner-title');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner内容
+      typeBadge.textContent = data.type;
+      titleElement.textContent = data.title || '已跳转到下一次月食';
+      
+      // 根据月食类型设置样式
+      typeBadge.className = 'eclipse-type-badge';
+      if (data.type === '月全食') {
+        typeBadge.classList.add('total');
+      } else if (data.type === '月偏食') {
+        typeBadge.classList.add('partial');
+      }
+      
+      // 重置并显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      // 开始进度条动画
+      currentProgressTimer = setTimeout(() => {
+        progressBar.style.transitionDuration = '5s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 5秒后自动隐藏
+      currentBannerTimer = setTimeout(() => {
+        hideEclipseBanner();
+      }, 5000);
+    }
+
+    // 隐藏月食跳转浮动banner
+    function hideEclipseBanner() {
+      const banner = document.getElementById('eclipseBanner');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      banner.classList.remove('show');
+      banner.classList.add('hidden');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+    }
+
+    // 显示错误消息banner
+    function showErrorBanner(message) {
+      const banner = document.getElementById('eclipseBanner');
+      const titleElement = banner.querySelector('.banner-title');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const tipsElement = banner.querySelector('.banner-tips');
+      const iconElement = banner.querySelector('.banner-icon');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner为错误状态
+      titleElement.textContent = message;
+      typeBadge.textContent = '未找到';
+      typeBadge.style.background = 'linear-gradient(135deg, #d32f2f, #b71c1c)';
+      tipsElement.textContent = '您可以尝试调整搜索范围或时间';
+      iconElement.textContent = '❌';
+      
+      // 显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置并启动进度条动画
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      setTimeout(() => {
+        progressBar.style.transitionDuration = '4s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 4秒后自动隐藏
+      setTimeout(() => {
+        hideEclipseBanner();
+        // 恢复原始状态
+        titleElement.textContent = '已跳转到下一次月食';
+        typeBadge.textContent = '月全食';
+        typeBadge.style.background = 'linear-gradient(135deg, #c9a35c, #9b7c3e)';
+        iconElement.textContent = '🌙';
+        tipsElement.textContent = '💡 打开画中画观看完整月食过程';
+      }, 4000);
+    }
+
+    // 显示日食跳转浮动banner
+    function showSolarEclipseBanner(data) {
+      // 清除现有定时器
+      if (currentBannerTimer) {
+        clearTimeout(currentBannerTimer);
+        currentBannerTimer = null;
+      }
+      if (currentProgressTimer) {
+        clearTimeout(currentProgressTimer);
+        currentProgressTimer = null;
+      }
+      
+      // 隐藏其他banner
+      hideEclipseBanner();
+      
+      const banner = document.getElementById('solarEclipseBanner');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const titleElement = banner.querySelector('.banner-title');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner内容
+      typeBadge.textContent = data.type;
+      titleElement.textContent = data.title || '已跳转到下一次日食';
+      
+      // 根据日食类型设置样式
+      typeBadge.className = 'eclipse-type-badge';
+      if (data.type === '日全食') {
+        typeBadge.classList.add('solar-total');
+      } else if (data.type === '日偏食') {
+        typeBadge.classList.add('solar-partial');
+      } else if (data.type.includes('日食')) {
+        typeBadge.classList.add('solar-total');
+      }
+      
+      // 重置并显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      // 开始进度条动画
+      currentProgressTimer = setTimeout(() => {
+        progressBar.style.transitionDuration = '5s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 5秒后自动隐藏
+      currentBannerTimer = setTimeout(() => {
+        hideSolarEclipseBanner();
+      }, 5000);
+    }
+
+    // 隐藏日食跳转浮动banner
+    function hideSolarEclipseBanner() {
+      const banner = document.getElementById('solarEclipseBanner');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      banner.classList.remove('show');
+      banner.classList.add('hidden');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+    }
+
+    // 显示日食错误消息banner
+    function showSolarErrorBanner(message) {
+      const banner = document.getElementById('solarEclipseBanner');
+      const titleElement = banner.querySelector('.banner-title');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const tipsElement = banner.querySelector('.banner-tips');
+      const iconElement = banner.querySelector('.banner-icon');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner为错误状态
+      titleElement.textContent = message;
+      typeBadge.textContent = '未找到';
+      typeBadge.style.background = 'linear-gradient(135deg, #d32f2f, #b71c1c)';
+      tipsElement.textContent = '您可以尝试调整搜索范围或时间';
+      iconElement.textContent = '❌';
+      
+      // 显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置并启动进度条动画
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      setTimeout(() => {
+        progressBar.style.transitionDuration = '4s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 4秒后自动隐藏
+      setTimeout(() => {
+        hideSolarEclipseBanner();
+        // 恢复原始状态
+        titleElement.textContent = '已跳转到下一次日食';
+        typeBadge.textContent = '';
+        typeBadge.style.background = 'linear-gradient(135deg, #c9a35c, #9b7c3e)';
+        iconElement.textContent = '☀️';
+        tipsElement.textContent = '💡 打开画中画观看完整日食过程';
+      }, 4000);
+    }
+
     // 跳转到下一次月食
     function jumpToNextLunarEclipse() {
       console.log('正在搜索下一次月食...');
@@ -3471,7 +3590,7 @@
       
       // 使用 setTimeout 让UI有时间更新
       setTimeout(() => {
-        const nextEclipse = findNextLunarEclipse(days, 10000); // 搜索接下来27年内
+        const nextEclipse = findNextLunarEclipse(days, Math.ceil(sarosCurrent)); // 搜索一个沙罗周期内
         
         if (nextEclipse !== null) {
           // 跳转到月食前2.5天，让用户看到完整的动画过程
@@ -3481,12 +3600,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置月食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency(nextEclipse.type, nextEclipse.day, 'lunar');
+          // 设置月食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: validatedType, // 使用验证后的类型
+            type: nextEclipse.type, // 直接使用查找到的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
@@ -3505,9 +3623,17 @@
           // 显示成功消息
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
-          alert(`找到下一次${eclipseTypeText}！\n${eclipseTypeText}日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的月食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          
+          // 显示浮动banner而不是alert
+          showEclipseBanner({
+            type: eclipseTypeText,
+            eclipseDate: eclipseDate.toLocaleDateString(),
+            currentDate: currentDate.toLocaleDateString(),
+            alignment: syzygyData.progress.toFixed(1),
+            nodeDistance: (calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)
+          });
         } else {
-          alert('在接下来的27年内未找到月食');
+          showErrorBanner('在接下来的27年内未找到月食');
         }
         
         // 恢复按钮
@@ -3526,7 +3652,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextSolarEclipse(days, 10000, 'total');
+        const nextEclipse = findNextSolarEclipse(days, Math.ceil(sarosCurrent), 'total');
         
         if (nextEclipse !== null) {
           // 跳转到日全食前2.5天，让用户看到完整的动画过程
@@ -3554,9 +3680,13 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次日全食！\n日全食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的日全食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示日全食banner
+          showSolarEclipseBanner({
+            type: '日全食',
+            title: '已跳转到下一次日食'
+          });
         } else {
-          alert('在接下来的27年内未找到日全食');
+          showSolarErrorBanner('在接下来的27年内未找到日全食');
         }
         
         button.textContent = originalText;
@@ -3574,7 +3704,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextSolarEclipse(days, 10000, 'partial');
+        const nextEclipse = findNextSolarEclipse(days, Math.ceil(sarosCurrent), 'partial');
         
         if (nextEclipse !== null) {
           // 跳转到日偏食前2.5天，让用户看到完整的动画过程
@@ -3602,9 +3732,13 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次日偏食！\n日偏食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的日偏食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示日偏食banner
+          showSolarEclipseBanner({
+            type: '日偏食',
+            title: '已跳转到下一次日食'
+          });
         } else {
-          alert('在接下来的27年内未找到日偏食');
+          showSolarErrorBanner('在接下来的27年内未找到日偏食');
         }
         
         button.textContent = originalText;
@@ -3622,7 +3756,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextLunarEclipse(days, 10000, 'total');
+        const nextEclipse = findNextLunarEclipse(days, Math.ceil(sarosCurrent), 'total');
         
         if (nextEclipse !== null) {
           // 跳转到月全食前2.5天，让用户看到完整的动画过程
@@ -3632,12 +3766,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置月食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency('total', nextEclipse.day, 'lunar');
+          // 设置月食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: validatedType, // 使用验证后的类型
+            type: 'total', // 直接设置为月全食
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
@@ -3651,9 +3784,12 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次月全食！\n月全食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的月全食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示月全食banner
+          showEclipseBanner({
+            type: '月全食'
+          });
         } else {
-          alert('在接下来的27年内未找到月全食');
+          showErrorBanner('在接下来的27年内未找到月全食');
         }
         
         button.textContent = originalText;
@@ -3671,7 +3807,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextLunarEclipse(days, 10000, 'partial');
+        const nextEclipse = findNextLunarEclipse(days, Math.ceil(sarosCurrent), 'partial');
         
         if (nextEclipse !== null) {
           // 跳转到月偏食前2.5天，让用户看到完整的动画过程
@@ -3681,12 +3817,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置月食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency('partial', nextEclipse.day, 'lunar');
+          // 设置月食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: validatedType, // 使用验证后的类型
+            type: 'partial', // 直接设置为月偏食
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
@@ -3700,9 +3835,12 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次月偏食！\n月偏食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的月偏食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示月偏食banner
+          showEclipseBanner({
+            type: '月偏食'
+          });
         } else {
-          alert('在接下来的27年内未找到月偏食');
+          showErrorBanner('在接下来的27年内未找到月偏食');
         }
         
         button.textContent = originalText;
