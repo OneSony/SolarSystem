@@ -75,6 +75,11 @@ a {
   min-width: 90px;
 }
 
+/* 月相状态项需要更宽的空间 */
+.dashboard-item.moon-phase {
+  min-width: 120px;
+}
+
 .db-label {
   color: #c9a35c;;
   font-size: 14px;
@@ -1279,8 +1284,8 @@ ul {
 /* 月食跳转浮动banner */
 .eclipse-banner {
   position: fixed;
-  top: 100px;
-  right: 30px;
+  top: 110px; /* dashboard底部(~95px) + 15px间距 */
+  right: 4%; /* 与dashboard右侧对齐 */
   z-index: 1000;
   max-width: 380px;
   min-width: 320px;
@@ -1425,6 +1430,7 @@ ul {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .eclipse-banner {
+    top: 100px; /* 移动端也相应调整距离 */
     right: 15px;
     left: 15px;
     max-width: none;
