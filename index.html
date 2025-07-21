@@ -3225,7 +3225,7 @@
     
 
     // 寻找下一次日食的时间
-    function findNextSolarEclipse(currentDays, maxSearchDays = 10000, eclipseType = 'any') {
+    function findNextSolarEclipse(currentDays, maxSearchDays = Math.ceil(sarosCurrent), eclipseType = 'any') {
       for (let i = 1; i < maxSearchDays; i++) {
         const testDay = currentDays + i;
         
@@ -3256,7 +3256,7 @@
     }
     
     // 寻找下一次月食的时间
-    function findNextLunarEclipse(currentDays, maxSearchDays = 10000, eclipseType = 'any') {
+    function findNextLunarEclipse(currentDays, maxSearchDays = Math.ceil(sarosCurrent), eclipseType = 'any') {
       for (let i = 1; i < maxSearchDays; i++) {
         const testDay = currentDays + i;
         
@@ -3306,7 +3306,7 @@
       
       // 使用 setTimeout 让UI有时间更新
       setTimeout(() => {
-        const nextEclipse = findNextSolarEclipse(days, 10000); // 搜索接下来27年内
+        const nextEclipse = findNextSolarEclipse(days, Math.ceil(sarosCurrent)); // 搜索一个沙罗周期内
         
         if (nextEclipse !== null) {
           // 跳转到日食前2.5天，让用户看到完整的动画过程
@@ -3587,7 +3587,7 @@
       
       // 使用 setTimeout 让UI有时间更新
       setTimeout(() => {
-        const nextEclipse = findNextLunarEclipse(days, 10000); // 搜索接下来27年内
+        const nextEclipse = findNextLunarEclipse(days, Math.ceil(sarosCurrent)); // 搜索一个沙罗周期内
         
         if (nextEclipse !== null) {
           // 跳转到月食前2.5天，让用户看到完整的动画过程
@@ -3649,7 +3649,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextSolarEclipse(days, 10000, 'total');
+        const nextEclipse = findNextSolarEclipse(days, Math.ceil(sarosCurrent), 'total');
         
         if (nextEclipse !== null) {
           // 跳转到日全食前2.5天，让用户看到完整的动画过程
@@ -3701,7 +3701,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextSolarEclipse(days, 10000, 'partial');
+        const nextEclipse = findNextSolarEclipse(days, Math.ceil(sarosCurrent), 'partial');
         
         if (nextEclipse !== null) {
           // 跳转到日偏食前2.5天，让用户看到完整的动画过程
@@ -3753,7 +3753,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextLunarEclipse(days, 10000, 'total');
+        const nextEclipse = findNextLunarEclipse(days, Math.ceil(sarosCurrent), 'total');
         
         if (nextEclipse !== null) {
           // 跳转到月全食前2.5天，让用户看到完整的动画过程
@@ -3804,7 +3804,7 @@
       button.disabled = true;
       
       setTimeout(() => {
-        const nextEclipse = findNextLunarEclipse(days, 10000, 'partial');
+        const nextEclipse = findNextLunarEclipse(days, Math.ceil(sarosCurrent), 'partial');
         
         if (nextEclipse !== null) {
           // 跳转到月偏食前2.5天，让用户看到完整的动画过程
