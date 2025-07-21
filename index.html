@@ -766,10 +766,10 @@
     
     // 黄白交点位于月球轨道上，距离地球1.2个单位
     // 考虑到轨道倾斜的几何关系，交点应该在z轴方向
-    // 升交点位于角度π/2的位置，降交点位于角度3π/2的位置
+    // 由于月球轨道倾斜-5.15°，升交点在Z负方向，降交点在Z正方向
     const moonOrbitRadius = 1.2;
-    ascendingNode.position.set(0, 0, moonOrbitRadius);
-    descendingNode.position.set(0, 0, -moonOrbitRadius);
+    ascendingNode.position.set(0, 0, -moonOrbitRadius);  // 升交点：从下方穿过到上方
+    descendingNode.position.set(0, 0, moonOrbitRadius);   // 降交点：从上方穿过到下方
     
     // 将交点添加到月球轨道组中，这样它们会跟随轨道倾斜和进动
     moonOrbitGroup.add(ascendingNode);
@@ -862,7 +862,7 @@
       const texture1 = new THREE.CanvasTexture(canvas1);
       const material1 = new THREE.SpriteMaterial({ map: texture1 });
       const ascending = new THREE.Sprite(material1);
-      ascending.position.set(0, 0.2, 1.2);
+      ascending.position.set(0, 0.2, -1.2);  // 升交点在Z负方向
       ascending.scale.set(0.5, 0.25, 1);
       
       // 创建降交点标签
@@ -878,7 +878,7 @@
       const texture2 = new THREE.CanvasTexture(canvas2);
       const material2 = new THREE.SpriteMaterial({ map: texture2 });
       const descending = new THREE.Sprite(material2);
-      descending.position.set(0, 0.2, -1.2);
+      descending.position.set(0, 0.2, 1.2);   // 降交点在Z正方向
       descending.scale.set(0.5, 0.25, 1);
       
       return { ascending, descending };
@@ -2583,6 +2583,9 @@
     function changeMoonNodesVisibility() {
       ascendingNode.visible = moonNodesSwitch.checked;
       descendingNode.visible = moonNodesSwitch.checked;
+      // 同时控制月球交点标签的可见性
+      nodeLabels.ascending.visible = moonNodesSwitch.checked;
+      nodeLabels.descending.visible = moonNodesSwitch.checked;
     }
 
     //修改速度
