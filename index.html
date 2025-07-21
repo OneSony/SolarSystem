@@ -3152,9 +3152,6 @@
       // 月球在轨道上的位置角度（月球公转）
       const moonOrbitAngle = daysSinceOrigin * moonRevolveAnglePerDay;
       
-      // 月球轨道进动角度（轨道面的进动，约18.6年周期）
-      const moonOrbitPrecessionAngle = daysSinceOrigin * moonOrbitPrecessionPerDay;
-      
       // 计算月球相对于交点的角度
       // 升交点位于角度π/2，降交点位于角度3π/2
       const angleFromAscendingNode = moonOrbitAngle - Math.PI/2;
@@ -3174,20 +3171,13 @@
       const eclipseType = determineEclipseTypeUnified(minDistanceFromNode);
       const isNearNode = eclipseType !== 'none';
       
-      // 计算月球的黄纬（基于轨道倾斜5.15度）
-      // 由于交点位置调整到π/2和3π/2，黄纬计算公式需要相应调整
-      const moonOrbitInclination = THREE.MathUtils.degToRad(5.15);
-      const eclipticLatitude = -Math.cos(moonOrbitAngle) * Math.sin(moonOrbitInclination);
-      
       return {
         moonOrbitAngle: moonOrbitAngle,
-        moonOrbitPrecessionAngle: moonOrbitPrecessionAngle,
         distanceFromAscendingNode: distFromAscending,
         distanceFromDescendingNode: distFromDescending,
         minDistanceFromNode: minDistanceFromNode,
         isNearNode: isNearNode,
         eclipseType: eclipseType, // 新增：食相类型
-        eclipticLatitude: eclipticLatitude,
         nearAscendingNode: distFromAscending < distFromDescending
       };
     }
