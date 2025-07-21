@@ -1609,7 +1609,9 @@
             ctx.lineWidth = 2;
             for (let i = 0; i < 40; i++) {
               const angle = (i / 40) * 2 * Math.PI;
-              const rayLength = 40 + Math.sin(angle * 3) * 15 + Math.random() * 25;
+              // 减慢随机变化，使用更慢的时间因子
+              const slowTime = Date.now() * 0.001; // 从0.01改为0.001，减慢10倍
+              const rayLength = 40 + Math.sin(angle * 3 + slowTime) * 15 + Math.sin(slowTime + i) * 10;
               const x1 = centerX + Math.cos(angle) * (sunRadius + 2);
               const y1 = centerY + Math.sin(angle) * (sunRadius + 2);
               const x2 = centerX + Math.cos(angle) * (sunRadius + rayLength);
@@ -1621,12 +1623,13 @@
               ctx.stroke();
             }
             
-            // 绘制流光效果（更多更亮）
+            // 绘制流光效果（更多更亮，减慢动画速度）
             ctx.strokeStyle = `rgba(220, 220, 255, ${coronaIntensity * 0.7})`;
             ctx.lineWidth = 1;
             for (let i = 0; i < 20; i++) {
               const angle = (i / 20) * 2 * Math.PI;
-              const waveLength = 50 + Math.sin(Date.now() * 0.01 + i) * 15;
+              // 减慢流光动画速度
+              const waveLength = 50 + Math.sin(Date.now() * 0.003 + i) * 15; // 从0.01改为0.003
               const x1 = centerX + Math.cos(angle) * (sunRadius + 15);
               const y1 = centerY + Math.sin(angle) * (sunRadius + 15);
               const x2 = centerX + Math.cos(angle) * (sunRadius + waveLength);
@@ -1638,19 +1641,28 @@
               ctx.stroke();
             }
             
-            // 绘制星星效果（全食时可见星星）
+            // 绘制星星效果（全食时可见星星，使用固定位置）
             if (intensity > 0.7) {
               ctx.fillStyle = `rgba(255, 255, 255, ${coronaIntensity * 0.8})`;
-              for (let i = 0; i < 8; i++) {
-                const angle = Math.random() * 2 * Math.PI;
-                const distance = sunRadius * 2 + Math.random() * sunRadius;
-                const x = centerX + Math.cos(angle) * distance;
-                const y = centerY + Math.sin(angle) * distance;
+              
+              // 使用固定的星星位置避免闪烁
+              if (!window.cachedCoronaStars) {
+                window.cachedCoronaStars = [];
+                for (let i = 0; i < 8; i++) {
+                  const angle = (i / 8) * 2 * Math.PI + Math.sin(i) * 0.5; // 固定角度分布
+                  const distance = sunRadius * 2.2 + (i % 3) * 15; // 固定距离
+                  window.cachedCoronaStars.push({ angle, distance });
+                }
+              }
+              
+              window.cachedCoronaStars.forEach(star => {
+                const x = centerX + Math.cos(star.angle) * star.distance;
+                const y = centerY + Math.sin(star.angle) * star.distance;
                 
                 ctx.beginPath();
                 ctx.arc(x, y, 2, 0, 2 * Math.PI);
                 ctx.fill();
-              }
+              });
             }
           }
         
@@ -1746,30 +1758,7 @@
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       
-      // 添加黑色描边以提高可读性
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.lineWidth = 2;
-      
-      const progressText = `${eclipseType === 'total' ? '日全食' : '日偏食'} ${(combinedProgress * 100).toFixed(1)}%`;
-      ctx.strokeText(progressText, centerX, canvas.height - 20);
-      ctx.fillText(progressText, centerX, canvas.height - 20);
-      
-              // 日全食时在全食阶段显示特殊标记
-        if (eclipseType === 'total' && intensity > 0.75 && intensity < 0.9) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-          ctx.font = 'bold 14px Arial';
-          ctx.strokeText('全食阶段 - 可见日冕', centerX, canvas.height - 45);
-          ctx.fillText('全食阶段 - 可见日冕', centerX, canvas.height - 45);
-        }
-        
-        // 显示轨迹类型提示
-        if (timeProgress > 0.1 && timeProgress < 0.9) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-          ctx.font = '12px Arial';
-          const trackText = eclipseType === 'total' ? '月球轨迹：穿过太阳中心' : '月球轨迹：擦过太阳上方';
-          ctx.strokeText(trackText, centerX, 30);
-          ctx.fillText(trackText, centerX, 30);
-        }
+      // 进度说明已移除以保持画面简洁
     }
 
     /**
@@ -1853,19 +1842,39 @@
       ctx.arc(centerX, centerY, moonRadius, 0, 2 * Math.PI);
       ctx.fill();
 
-      // 绘制月球表面纹理
+      // 绘制月球表面纹理（使用固定位置避免闪烁）
       ctx.fillStyle = 'rgba(180, 180, 180, 0.3)';
-      for (let i = 0; i < 20; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const distance = Math.random() * moonRadius * 0.8;
-        const x = centerX + Math.cos(angle) * distance;
-        const y = centerY + Math.sin(angle) * distance;
-        const radius = Math.random() * 8 + 3;
+      
+      // 生成固定的月球纹理位置（基于月球半径作为种子）
+      if (!window.cachedMoonTexture || window.cachedMoonTexture.radius !== moonRadius) {
+        window.cachedMoonTexture = {
+          radius: moonRadius,
+          craters: []
+        };
         
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
-        ctx.fill();
+        // 使用固定种子生成稳定的纹理
+        const tempRandom = Math.random;
+        Math.random = () => Math.sin(moonRadius * 12345) % 1; // 临时固定随机数
+        
+        for (let i = 0; i < 20; i++) {
+          const angle = (i / 20) * 2 * Math.PI + Math.sin(i * 3.14) * 0.5;
+          const distance = (0.3 + (i % 5) * 0.1) * moonRadius;
+          const x = centerX + Math.cos(angle) * distance;
+          const y = centerY + Math.sin(angle) * distance;
+          const radius = 3 + (i % 3) * 2;
+          
+          window.cachedMoonTexture.craters.push({ x: x - centerX, y: y - centerY, radius });
+        }
+        
+        Math.random = tempRandom; // 恢复原始随机函数
       }
+      
+      // 绘制缓存的月球纹理
+      window.cachedMoonTexture.craters.forEach(crater => {
+        ctx.beginPath();
+        ctx.arc(centerX + crater.x, centerY + crater.y, crater.radius, 0, 2 * Math.PI);
+        ctx.fill();
+      });
 
       // 绘制地球阴影（位置基于时间进度，强度基于天文条件）
       if (timeProgress > 0) {
@@ -2028,32 +2037,7 @@
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       
-      // 添加黑色描边以提高可读性
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.lineWidth = 2;
-      
-      const progressText = `${eclipseType === 'total' ? '月全食' : '月偏食'} ${(combinedProgress * 100).toFixed(1)}%`;
-      ctx.strokeText(progressText, centerX, canvas.height - 20);
-      ctx.fillText(progressText, centerX, canvas.height - 20);
-      
-      // 月全食时在血月阶段显示特殊标记
-      if (eclipseType === 'total' && intensity > 0.5 && intensity < 0.8) {
-        ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
-        ctx.font = 'bold 14px Arial';
-        ctx.strokeText('血月阶段 - 地球大气散射红光', centerX, canvas.height - 45);
-        ctx.fillText('血月阶段 - 地球大气散射红光', centerX, canvas.height - 45);
-      }
-      
-      // 显示轨迹类型提示
-      if (timeProgress > 0.1 && timeProgress < 0.9) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.font = '12px Arial';
-        const trackText = eclipseType === 'total' ? 
-          '地球阴影轨迹：穿过月球中心' : 
-          '地球阴影轨迹：从月球上方经过';
-        ctx.strokeText(trackText, centerX, 30);
-        ctx.fillText(trackText, centerX, 30);
-      }
+      // 进度说明已移除以保持画面简洁
     }
 
     /**
