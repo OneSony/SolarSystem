@@ -8,6 +8,38 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!------ 月食跳转浮动banner ------>
+  <div id="eclipseBanner" class="eclipse-banner hidden">
+    <div class="banner-content">
+      <div class="banner-icon">🌙</div>
+      <div class="banner-info">
+        <div class="banner-header">
+          <div class="banner-title">已跳转到下一次月食</div>
+          <div class="eclipse-type-badge">月全食</div>
+        </div>
+        <div class="banner-tips">💡 打开画中画观看完整月食过程</div>
+      </div>
+      <button class="banner-close" onclick="hideEclipseBanner()">×</button>
+    </div>
+    <div class="banner-progress"></div>
+  </div>
+
+  <!------ 日食跳转浮动banner ------>
+  <div id="solarEclipseBanner" class="eclipse-banner hidden">
+    <div class="banner-content">
+      <div class="banner-icon">☀️</div>
+      <div class="banner-info">
+        <div class="banner-header">
+          <div class="banner-title">已跳转到下一次日食</div>
+          <div class="eclipse-type-badge"></div>
+        </div>
+        <div class="banner-tips">💡 打开画中画观看完整日食过程</div>
+      </div>
+      <button class="banner-close" onclick="hideSolarEclipseBanner()">×</button>
+    </div>
+    <div class="banner-progress"></div>
+  </div>
+
   <!------ 标题 ------>
   <div id="title">
     <img src="https://cdn.picui.cn/vip/2025/07/11/6870e6590199f.png" alt="Solar System">
@@ -486,6 +518,11 @@
     const pipMinimize = document.getElementById('pipMinimize');
     const pipClose = document.getElementById('pipClose');
     const PIPSwitch = document.getElementById('PIPSwitch');
+    
+    // Banner管理变量
+    let currentBannerTimer = null;
+    let currentProgressTimer = null;
+    let activeBanner = null;
     const prevPageBtn = document.getElementById('prevPageBtn');
     const nextPageBtn = document.getElementById('nextPageBtn');
     const helpModal = document.getElementById('modalMask');
@@ -3284,9 +3321,14 @@
           // 显示成功消息
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
-          alert(`找到下一次${eclipseTypeText}！\n${eclipseTypeText}日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的日食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          
+          // 显示日食banner
+          showSolarEclipseBanner({
+            type: eclipseTypeText,
+            title: '已跳转到下一次日食'
+          });
         } else {
-          alert('在接下来的27年内未找到日食');
+          showSolarErrorBanner('在接下来的27年内未找到日食');
         }
         
         // 恢复按钮
@@ -3295,6 +3337,226 @@
       }, 100);
     }
     
+    // 显示月食跳转浮动banner
+    function showEclipseBanner(data) {
+      // 清除现有定时器
+      if (currentBannerTimer) {
+        clearTimeout(currentBannerTimer);
+        currentBannerTimer = null;
+      }
+      if (currentProgressTimer) {
+        clearTimeout(currentProgressTimer);
+        currentProgressTimer = null;
+      }
+      
+      // 隐藏其他banner
+      hideSolarEclipseBanner();
+      
+      const banner = document.getElementById('eclipseBanner');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const titleElement = banner.querySelector('.banner-title');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner内容
+      typeBadge.textContent = data.type;
+      titleElement.textContent = data.title || '已跳转到下一次月食';
+      
+      // 根据月食类型设置样式
+      typeBadge.className = 'eclipse-type-badge';
+      if (data.type === '月全食') {
+        typeBadge.classList.add('total');
+      } else if (data.type === '月偏食') {
+        typeBadge.classList.add('partial');
+      }
+      
+      // 重置并显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      // 开始进度条动画
+      currentProgressTimer = setTimeout(() => {
+        progressBar.style.transitionDuration = '5s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 5秒后自动隐藏
+      currentBannerTimer = setTimeout(() => {
+        hideEclipseBanner();
+      }, 5000);
+    }
+
+    // 隐藏月食跳转浮动banner
+    function hideEclipseBanner() {
+      const banner = document.getElementById('eclipseBanner');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      banner.classList.remove('show');
+      banner.classList.add('hidden');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+    }
+
+    // 显示错误消息banner
+    function showErrorBanner(message) {
+      const banner = document.getElementById('eclipseBanner');
+      const titleElement = banner.querySelector('.banner-title');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const tipsElement = banner.querySelector('.banner-tips');
+      const iconElement = banner.querySelector('.banner-icon');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner为错误状态
+      titleElement.textContent = message;
+      typeBadge.textContent = '未找到';
+      typeBadge.style.background = 'linear-gradient(135deg, #d32f2f, #b71c1c)';
+      tipsElement.textContent = '您可以尝试调整搜索范围或时间';
+      iconElement.textContent = '❌';
+      
+      // 显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置并启动进度条动画
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      setTimeout(() => {
+        progressBar.style.transitionDuration = '4s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 4秒后自动隐藏
+      setTimeout(() => {
+        hideEclipseBanner();
+        // 恢复原始状态
+        titleElement.textContent = '已跳转到下一次月食';
+        typeBadge.textContent = '月全食';
+        typeBadge.style.background = 'linear-gradient(135deg, #c9a35c, #9b7c3e)';
+        iconElement.textContent = '🌙';
+        tipsElement.textContent = '💡 打开画中画观看完整月食过程';
+      }, 4000);
+    }
+
+    // 显示日食跳转浮动banner
+    function showSolarEclipseBanner(data) {
+      // 清除现有定时器
+      if (currentBannerTimer) {
+        clearTimeout(currentBannerTimer);
+        currentBannerTimer = null;
+      }
+      if (currentProgressTimer) {
+        clearTimeout(currentProgressTimer);
+        currentProgressTimer = null;
+      }
+      
+      // 隐藏其他banner
+      hideEclipseBanner();
+      
+      const banner = document.getElementById('solarEclipseBanner');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const titleElement = banner.querySelector('.banner-title');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner内容
+      typeBadge.textContent = data.type;
+      titleElement.textContent = data.title || '已跳转到下一次日食';
+      
+      // 根据日食类型设置样式
+      typeBadge.className = 'eclipse-type-badge';
+      if (data.type === '日全食') {
+        typeBadge.classList.add('solar-total');
+      } else if (data.type === '日偏食') {
+        typeBadge.classList.add('solar-partial');
+      } else if (data.type.includes('日食')) {
+        typeBadge.classList.add('solar-total');
+      }
+      
+      // 重置并显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      // 开始进度条动画
+      currentProgressTimer = setTimeout(() => {
+        progressBar.style.transitionDuration = '5s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 5秒后自动隐藏
+      currentBannerTimer = setTimeout(() => {
+        hideSolarEclipseBanner();
+      }, 5000);
+    }
+
+    // 隐藏日食跳转浮动banner
+    function hideSolarEclipseBanner() {
+      const banner = document.getElementById('solarEclipseBanner');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      banner.classList.remove('show');
+      banner.classList.add('hidden');
+      
+      // 重置进度条
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+    }
+
+    // 显示日食错误消息banner
+    function showSolarErrorBanner(message) {
+      const banner = document.getElementById('solarEclipseBanner');
+      const titleElement = banner.querySelector('.banner-title');
+      const typeBadge = banner.querySelector('.eclipse-type-badge');
+      const tipsElement = banner.querySelector('.banner-tips');
+      const iconElement = banner.querySelector('.banner-icon');
+      const progressBar = banner.querySelector('.banner-progress');
+      
+      // 更新banner为错误状态
+      titleElement.textContent = message;
+      typeBadge.textContent = '未找到';
+      typeBadge.style.background = 'linear-gradient(135deg, #d32f2f, #b71c1c)';
+      tipsElement.textContent = '您可以尝试调整搜索范围或时间';
+      iconElement.textContent = '❌';
+      
+      // 显示banner
+      banner.classList.remove('hidden');
+      banner.classList.add('show');
+      
+      // 重置并启动进度条动画
+      progressBar.classList.remove('animate');
+      progressBar.style.transitionDuration = '0s';
+      progressBar.style.transform = 'scaleX(0)';
+      
+      setTimeout(() => {
+        progressBar.style.transitionDuration = '4s';
+        progressBar.classList.add('animate');
+      }, 100);
+      
+      // 4秒后自动隐藏
+      setTimeout(() => {
+        hideSolarEclipseBanner();
+        // 恢复原始状态
+        titleElement.textContent = '已跳转到下一次日食';
+        typeBadge.textContent = '';
+        typeBadge.style.background = 'linear-gradient(135deg, #c9a35c, #9b7c3e)';
+        iconElement.textContent = '☀️';
+        tipsElement.textContent = '💡 打开画中画观看完整日食过程';
+      }, 4000);
+    }
+
     // 跳转到下一次月食
     function jumpToNextLunarEclipse() {
       console.log('正在搜索下一次月食...');
@@ -3340,9 +3602,17 @@
           // 显示成功消息
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
-          alert(`找到下一次${eclipseTypeText}！\n${eclipseTypeText}日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的月食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          
+          // 显示浮动banner而不是alert
+          showEclipseBanner({
+            type: eclipseTypeText,
+            eclipseDate: eclipseDate.toLocaleDateString(),
+            currentDate: currentDate.toLocaleDateString(),
+            alignment: syzygyData.progress.toFixed(1),
+            nodeDistance: (calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)
+          });
         } else {
-          alert('在接下来的27年内未找到月食');
+          showErrorBanner('在接下来的27年内未找到月食');
         }
         
         // 恢复按钮
@@ -3389,9 +3659,13 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次日全食！\n日全食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的日全食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示日全食banner
+          showSolarEclipseBanner({
+            type: '日全食',
+            title: '已跳转到下一次日食'
+          });
         } else {
-          alert('在接下来的27年内未找到日全食');
+          showSolarErrorBanner('在接下来的27年内未找到日全食');
         }
         
         button.textContent = originalText;
@@ -3437,9 +3711,13 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次日偏食！\n日偏食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的日偏食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示日偏食banner
+          showSolarEclipseBanner({
+            type: '日偏食',
+            title: '已跳转到下一次日食'
+          });
         } else {
-          alert('在接下来的27年内未找到日偏食');
+          showSolarErrorBanner('在接下来的27年内未找到日偏食');
         }
         
         button.textContent = originalText;
@@ -3485,9 +3763,12 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次月全食！\n月全食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的月全食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示月全食banner
+          showEclipseBanner({
+            type: '月全食'
+          });
         } else {
-          alert('在接下来的27年内未找到月全食');
+          showErrorBanner('在接下来的27年内未找到月全食');
         }
         
         button.textContent = originalText;
@@ -3533,9 +3814,12 @@
           const eclipseDate = new Date(dateOrigin.getTime() + nextEclipse.day * 24 * 60 * 60 * 1000);
           const currentDate = new Date(dateOrigin.getTime() + targetDay * 24 * 60 * 60 * 1000);
           
-          alert(`找到下一次月偏食！\n月偏食日期：${eclipseDate.toLocaleDateString()}\n当前跳转到：${currentDate.toLocaleDateString()}\n\n💡 提示：\n• 打开画中画可观看完整的月偏食动画过程\n• 可以调整速度来控制动画播放快慢\n• 使用快捷按钮±1月/±1年微调时间\n\n详细信息：\n月相：${syzygyData.type}\n对齐程度：${syzygyData.progress.toFixed(1)}%\n距离交点：${(calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
+          // 显示月偏食banner
+          showEclipseBanner({
+            type: '月偏食'
+          });
         } else {
-          alert('在接下来的27年内未找到月偏食');
+          showErrorBanner('在接下来的27年内未找到月偏食');
         }
         
         button.textContent = originalText;

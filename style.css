@@ -1275,3 +1275,171 @@ ul {
 	-ms-border-radius: 5px;
 	-o-border-radius: 5px;
 }
+
+/* 月食跳转浮动banner */
+.eclipse-banner {
+  position: fixed;
+  top: 100px;
+  right: 30px;
+  z-index: 1000;
+  max-width: 380px;
+  min-width: 320px;
+  background: rgba(32, 28, 22, 0.95);
+  border: 2px solid #9b7c3e;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(155, 124, 62, 0.2);
+  backdrop-filter: blur(10px);
+  transform: translateX(100%);
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+  opacity: 0;
+}
+
+.eclipse-banner.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.eclipse-banner.hidden {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.banner-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.banner-icon {
+  font-size: 28px;
+  line-height: 1;
+  margin-top: 2px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.banner-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.banner-title {
+  color: #fcfcfc;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.02em;
+  flex: 1;
+}
+
+.eclipse-type-badge {
+  background: linear-gradient(135deg, #c9a35c, #9b7c3e);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 6px rgba(201, 163, 92, 0.3);
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+.eclipse-type-badge.total {
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.4);
+}
+
+.eclipse-type-badge.partial {
+  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+  box-shadow: 0 2px 6px rgba(79, 195, 247, 0.4);
+}
+
+.eclipse-type-badge.solar-total {
+  background: linear-gradient(135deg, #ffb74d, #ff9800);
+  box-shadow: 0 2px 6px rgba(255, 183, 77, 0.4);
+}
+
+.eclipse-type-badge.solar-partial {
+  background: linear-gradient(135deg, #ffcc02, #ffc107);
+  box-shadow: 0 2px 6px rgba(255, 204, 2, 0.4);
+}
+
+.banner-tips {
+  color: #a68d60;
+  font-size: 12px;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.banner-close {
+  background: transparent;
+  border: none;
+  color: #9b7c3e;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  margin-top: -2px;
+}
+
+.banner-close:hover {
+  background: rgba(155, 124, 62, 0.2);
+  color: #fcfcfc;
+  transform: scale(1.1);
+}
+
+.banner-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: #9b7c3e;
+  border-radius: 0 0 12px 12px;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform ease-out;
+}
+
+.banner-progress.animate {
+  transform: scaleX(1);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .eclipse-banner {
+    right: 15px;
+    left: 15px;
+    max-width: none;
+    min-width: auto;
+  }
+  
+  .banner-content {
+    padding: 14px 16px;
+  }
+  
+  .banner-icon {
+    font-size: 24px;
+  }
+  
+  .banner-title {
+    font-size: 15px;
+  }
+}
