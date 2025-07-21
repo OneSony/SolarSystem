@@ -2751,11 +2751,12 @@
     function calculateSyzygyProgress() {
       // 获取当前天体角度位置
       const earthAngle = earthOrbit.rotation.y; // 地球绕太阳的角度
+      const moonOrbitPrecession = moonOrbitGroup.rotation.y; // 月球轨道进动
       const moonInOrbit = moonOrbit.rotation.y; // 月球在轨道内的角度（恒星坐标系）
       
       // 月相计算：直接使用月球相对地球的角度，忽略轨道进动的微小影响
       // 月球在太阳坐标系中的角度 = 地球角度 + 月球相对地球的角度
-      const moonRelativeToEarth = moonInOrbit;
+      const moonRelativeToEarth = moonInOrbit + moonOrbitPrecession;
       
       // 计算月相角度：从地球看月球相对于太阳的角度
       // 关键修正：月相角度应该是月球相对地球背向太阳方向的角度
@@ -2870,11 +2871,12 @@
     function calculateSyzygyProgressForDay(daysSinceOrigin) {
       // 基于天数计算天体角度位置
       const earthAngle = daysSinceOrigin * earthRevolveAnglePerDay;
+      const moonOrbitPrecession = daysSinceOrigin * moonOrbitPrecessionPerDay;
       const moonInOrbit = daysSinceOrigin * moonRevolveAnglePerDay;
       
       // 月相计算：直接使用月球相对地球的角度，忽略轨道进动的微小影响
       // 月球在太阳坐标系中的角度 = 地球角度 + 月球相对地球的角度
-      const moonRelativeToEarth = moonInOrbit;
+      const moonRelativeToEarth = moonInOrbit + moonOrbitPrecession;
       
       // 计算月相角度：从地球看月球相对于太阳的角度
       // 关键修正：月相角度应该是月球相对地球背向太阳方向的角度
