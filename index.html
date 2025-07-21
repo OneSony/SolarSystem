@@ -540,7 +540,7 @@
     const sunRotateAnglePerDay = 0.228729; //太阳每天自转的角度
     const earthRevolveAnglePerDay = 0.017202; //地球每天公转的角度（弧度）
     const earthRotateAnglePerDay = 6.283185; //地球每天自转的角度
-    const moonRevolveAnglePerDay = 0.212783;
+    const moonRevolveAnglePerDay = 0.213707; // 补偿进动影响后的月球公转角速度，保持朔望月29.53天周期
     const moonRotateAnglePerDay = 0.229985; //月球每天自转的角度
     // 月球轨道进动：2π / (18.6年 × 365.25天) = 2π / 6793天 ≈ 0.000924
     const moonOrbitPrecessionPerDay = -0.000924; //月球轨道进动角速度（约18.6年一周期，逆行）
