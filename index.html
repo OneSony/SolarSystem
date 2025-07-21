@@ -535,22 +535,6 @@
       }
     }
 
-    /**
-     * 验证跳转后的类型与查找结果是否一致
-     * 确保用户看到的就是他们请求的类型
-     */
-    function validateEclipseTypeConsistency(foundType, targetDay, eclipseKind) {
-      const nodeData = calculateMoonNodePosition(targetDay);
-      const actualType = determineEclipseTypeUnified(nodeData.minDistanceFromNode);
-      
-      if (actualType !== foundType) {
-        console.warn(`类型不一致警告: 查找到${foundType}, 实际验证为${actualType}, 交点距离: ${(nodeData.minDistanceFromNode * 180 / Math.PI).toFixed(1)}°`);
-        console.warn(`强制使用查找结果: ${foundType}`);
-      }
-      
-      return foundType; // 始终返回查找到的类型，确保一致性
-    }
-
     // 公共变量：天体和运动参数
     const frameRate = 60; //动画帧数
     const sunRotateAnglePerDay = 0.228729; //太阳每天自转的角度
@@ -836,7 +820,6 @@
       context1.fillStyle = '#00ff00';
       context1.textAlign = 'center';
       context1.fillText('升交点', 64, 32);
-      context1.fillText('☊', 64, 50);
       
       const texture1 = new THREE.CanvasTexture(canvas1);
       const material1 = new THREE.SpriteMaterial({ map: texture1 });
@@ -853,7 +836,6 @@
       context2.fillStyle = '#ff0000';
       context2.textAlign = 'center';
       context2.fillText('降交点', 64, 32);
-      context2.fillText('☋', 64, 50);
       
       const texture2 = new THREE.CanvasTexture(canvas2);
       const material2 = new THREE.SpriteMaterial({ map: texture2 });
@@ -1294,66 +1276,6 @@
       pipCamera.lookAt(0, 0, 0);
     }
 
-    /**
-     * 更新3D月相光照（根据太阳位置）- 保留用于初始化
-     */
-    function update3DMoonPhase(phaseAngle, illumination) {
-      if (!pipSunLight || !pip3DMoon) return;
-      
-      // 根据原始月相角度计算逻辑：
-      // phaseAngle来自 (moonRelativeToEarth + Math.PI) 的计算
-      // 需要反推回moonRelativeToEarth来确定正确的光照方向
-      
-      // 反推月球相对地球的实际角度
-      const moonRelativeAngle = phaseAngle - Math.PI;
-      
-      // 根据月相计算最佳观测时间的天空颜色
-      const skyColor = calculateSkyColor(moonRelativeAngle);
-      
-      // 直接使用月球相对地球的角度，移除π/2修正
-      const sunAngleFor3D = moonRelativeAngle;
-      
-      // 地球视角：相机在Z+方向，光源在XZ平面内旋转
-      // 当moonRelativeAngle=0时（满月），光源从Z+方向照射
-      // 当moonRelativeAngle=π时（新月），光源从Z-方向照射
-      const sunDistance = 8;
-      const targetSunX = Math.sin(sunAngleFor3D) * sunDistance;  // X轴变化
-      const targetSunY = 0; // 保持在赤道平面
-      const targetSunZ = Math.cos(sunAngleFor3D) * sunDistance;  // Z轴变化，主要方向
-      
-      // 更新背景颜色
-      if (pipRenderer) {
-        pipRenderer.setClearColor(skyColor, 1.0);
-      }
-      
-      // 平滑过渡光源位置，避免瞬时变化 - 根据倍速调整
-      const baseLightSpeed = 0.04;
-      const lightTransitionSpeed = Math.min(0.5, baseLightSpeed * Math.sqrt(speedFactor));
-      
-      // 简化的平滑过渡，避免复杂的边界处理
-      lastSunLightPosition.x += (targetSunX - lastSunLightPosition.x) * lightTransitionSpeed;
-      lastSunLightPosition.y += (targetSunY - lastSunLightPosition.y) * lightTransitionSpeed;
-      lastSunLightPosition.z += (targetSunZ - lastSunLightPosition.z) * lightTransitionSpeed;
-      
-      // 更新光源位置
-      pipSunLight.position.set(lastSunLightPosition.x, lastSunLightPosition.y, lastSunLightPosition.z);
-      pipSunLight.lookAt(0, 0, 0);
-      
-      // 根据照明程度调整光照强度
-      const targetIntensity = 1.5 + illumination * 1.5;
-      pipSunLight.intensity += (targetIntensity - pipSunLight.intensity) * 0.1;
-      
-      // 调整环境光
-      const targetAmbient = 0.05 + illumination * 0.15;
-      pipAmbientLight.intensity += (targetAmbient - pipAmbientLight.intensity) * 0.1;
-      
-      // 月球潮汐锁定 - 完全静止，不自转
-      // 月球始终以同一面朝向观察者（地球）
-      pip3DMoon.rotation.set(0, 0, 0);
-      
-      pipCamera.lookAt(0, 0, 0);
-    }
-    
     /**
      * 3D月相动画循环
      */
@@ -2929,15 +2851,11 @@
         alignmentType = '残月';
       }
       
-      // 计算下次对齐时间
-      const nextAlignment = calculateNextAlignment(moonPhaseAngle);
-      
       return {
         progress: alignmentProgress,
         type: alignmentType,
         moonPhase: phaseDegrees,
         isNearEclipseNode: isNearNode,
-        nextAlignment: nextAlignment,
         currentDate: dateCurrent.toLocaleString(),
         earthAngle: earthAngle * 180 / Math.PI,
         moonAngle: moonAbsoluteAngle * 180 / Math.PI,
@@ -3053,9 +2971,6 @@
         alignmentType = '残月';
       }
       
-      // 计算下次对齐时间
-      const nextAlignment = calculateNextAlignment(moonPhaseAngle);
-      
       // 创建测试日期
       const testDate = new Date(dateOrigin.getTime() + daysSinceOrigin * 24 * 60 * 60 * 1000);
       
@@ -3064,7 +2979,6 @@
         type: alignmentType,
         moonPhase: phaseDegrees,
         isNearEclipseNode: isNearNode,
-        nextAlignment: nextAlignment,
         currentDate: testDate.toLocaleString(),
         earthAngle: earthAngle * 180 / Math.PI,
         moonAngle: moonAbsoluteAngle * 180 / Math.PI,
@@ -3075,52 +2989,7 @@
         }
       };
     }
-    
-    /**
-     * 计算距离下次日地月完美对齐的天数
-     * 修正版：基于正确的月球会合周期
-     */
-    function calculateNextAlignment(currentMoonPhase) {
-      // 朔望月周期（会合周期）
-      const synodicPeriod = 29.530588853; // 天
-      
-      // 当前月相角度（弧度转换为0-2π范围）
-      const phaseRadians = currentMoonPhase;
-      
-      // 计算到下次新月的时间
-      let daysToNewMoon;
-      if (phaseRadians < 0.261799) { // 15度以内
-        daysToNewMoon = (2 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      } else {
-        daysToNewMoon = (2 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      }
-      
-      // 计算到下次满月的时间
-      let daysToFullMoon;
-      const fullMoonPhase = Math.PI; // 180度
-      let phaseToFull = Math.abs(phaseRadians - fullMoonPhase);
-      if (phaseToFull > Math.PI) {
-        phaseToFull = 2 * Math.PI - phaseToFull;
-      }
-      
-      if (phaseRadians < Math.PI) {
-        daysToFullMoon = (Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      } else {
-        daysToFullMoon = (3 * Math.PI - phaseRadians) / (2 * Math.PI) * synodicPeriod;
-      }
-      
-      // 月球轨道交点周期约18.6年
-      const nodePeriod = 18.6 * 365.25; // 天
-      const currentNodePhase = (moonOrbitGroup.rotation.y % (2 * Math.PI));
-      
-      return {
-        daysToNewMoon: Math.abs(daysToNewMoon),
-        daysToFullMoon: Math.abs(daysToFullMoon),
-        synodicPeriod: synodicPeriod,
-        currentPhase: phaseRadians * 180 / Math.PI
-      };
-    }
-    
+
     /**
      * 更新月相状态显示（优化版本）
      */
@@ -3424,12 +3293,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置日食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency(nextEclipse.type, nextEclipse.day, 'solar');
+          // 设置日食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'solar',
-            type: validatedType, // 使用验证后的类型
+            type: nextEclipse.type, // 直接使用查找到的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
@@ -3481,12 +3349,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置月食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency(nextEclipse.type, nextEclipse.day, 'lunar');
+          // 设置月食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: validatedType, // 使用验证后的类型
+            type: nextEclipse.type, // 直接使用查找到的类型
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
@@ -3632,12 +3499,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置月食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency('total', nextEclipse.day, 'lunar');
+          // 设置月食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: validatedType, // 使用验证后的类型
+            type: 'total', // 直接设置为月全食
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
@@ -3681,12 +3547,11 @@
           // 清除之前的类型信息，避免干扰
           currentEclipseInfo = null;
           
-          // 验证并强制设置月食类型信息，确保类型一致性
-          const validatedType = validateEclipseTypeConsistency('partial', nextEclipse.day, 'lunar');
+          // 设置月食类型信息
           currentEclipseInfo = {
             isEclipse: true,
             kind: 'lunar',
-            type: validatedType, // 使用验证后的类型
+            type: 'partial', // 直接设置为月偏食
             bestDay: nextEclipse.day,
             bestAlignment: 100,
             nodeDistance: calculateMoonNodePosition(nextEclipse.day).minDistanceFromNode,
