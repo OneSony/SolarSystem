@@ -2512,12 +2512,12 @@
     //控制面板开关
     function switchControlPanel(){
       if (isControlPanelOpen) {
-        controlPanel.style.width = '0';
+        controlPanel.classList.remove('open');
         controlBtn.style.left = '24px';
         isControlPanelOpen = false;
       }
       else{
-        controlPanel.style.width = '360px';
+        controlPanel.classList.add('open');
         controlBtn.style.left = '400px';
         isControlPanelOpen = true;
       }
